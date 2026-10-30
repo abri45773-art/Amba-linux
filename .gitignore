@@ -1,0 +1,13 @@
+/downloads/
+/work/
+/out/
+*.img
+*.img.zst
+*.iso
+*.qcow2
+*.sha256
+*.log
+*.hash
+__pycache__/
+*.pyc
+.venv/

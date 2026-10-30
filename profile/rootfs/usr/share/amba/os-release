@@ -1,0 +1,11 @@
+NAME="Amba Linux"
+PRETTY_NAME="Amba Linux"
+ID=amba
+ID_LIKE=arch
+BUILD_ID=rolling
+ANSI_COLOR="38;2;45;212;191"
+HOME_URL="https://github.com/abri45773-art/Amba-linux"
+DOCUMENTATION_URL="https://github.com/abri45773-art/Amba-linux/tree/main/docs"
+SUPPORT_URL="https://github.com/abri45773-art/Amba-linux/issues"
+BUG_REPORT_URL="https://github.com/abri45773-art/Amba-linux/issues"
+LOGO=amba

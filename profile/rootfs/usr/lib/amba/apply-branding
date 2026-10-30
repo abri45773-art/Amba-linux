@@ -1,0 +1,9 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Called by the image builder and by a pacman hook after filesystem upgrades.
+set -euo pipefail
+install -Dm644 /usr/share/amba/os-release /usr/lib/os-release
+ln -snf ../usr/lib/os-release /etc/os-release
+if [[ -f /usr/share/amba/VERSION ]]; then
+  install -Dm644 /usr/share/amba/VERSION /usr/lib/amba/VERSION
+fi

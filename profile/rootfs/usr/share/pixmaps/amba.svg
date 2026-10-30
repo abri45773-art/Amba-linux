@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Amba Linux">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#2dd4bf"/><stop offset="1" stop-color="#0f766e"/></linearGradient></defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="#0f172a"/>
+  <path d="M48 196 112 56h32l64 140h-38l-13-31H99l-13 31Zm64-63h32l-16-39Z" fill="url(#g)"/>
+  <circle cx="196" cy="60" r="12" fill="#f8fafc"/>
+</svg>

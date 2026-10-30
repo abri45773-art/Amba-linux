@@ -1,0 +1,8 @@
+{
+  "KPlugin": {
+    "Authors": [{"Name": "Amba Linux contributors"}],
+    "Id": "Amba",
+    "License": "AGPL-3.0-or-later",
+    "Name": "Amba Horizon"
+  }
+}

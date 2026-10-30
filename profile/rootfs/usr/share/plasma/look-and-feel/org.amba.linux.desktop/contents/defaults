@@ -1,0 +1,16 @@
+[kdeglobals][KDE]
+widgetStyle=Breeze
+SingleClick=false
+
+[kdeglobals][General]
+ColorScheme=BreezeDark
+AccentColor=45,212,191
+
+[kdeglobals][Icons]
+Theme=breeze-dark
+
+[plasmarc][Theme]
+name=default
+
+[Wallpaper]
+Image=/usr/share/wallpapers/Amba/contents/images/3840x2160.png
