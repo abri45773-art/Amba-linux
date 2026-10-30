@@ -82,7 +82,7 @@ done
 
 valid_username "$USERNAME" || die "Nama user tidak valid atau dicadangkan: $USERNAME"
 [[ "$DISTRO_HOSTNAME" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]] || die "Hostname tidak valid."
-if [[ ! "$SIZE_GIB" =~ ^[0-9]+$ ]] || (( SIZE_GIB < 12 || SIZE_GIB > 128 )); then
+if ! SIZE_GIB=$(parse_uint "$SIZE_GIB") || (( SIZE_GIB < 12 || SIZE_GIB > 128 )); then
   die "--size-gib harus 12..128."
 fi
 [[ "$LOCALE" == "id_ID.UTF-8" || "$LOCALE" == "en_US.UTF-8" ]] || die "Locale awal harus id_ID.UTF-8 atau en_US.UTF-8."

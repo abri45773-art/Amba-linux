@@ -56,10 +56,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ -n "$IMAGE" ]] || { usage >&2; die "--image wajib."; }
-if [[ ! "$MEMORY" =~ ^[0-9]+$ ]] || (( MEMORY < 2048 || MEMORY > 32768 )); then
+if ! MEMORY=$(parse_uint "$MEMORY") || (( MEMORY < 2048 || MEMORY > 32768 )); then
   die "--memory harus 2048..32768 MiB."
 fi
-if [[ ! "$CPUS" =~ ^[0-9]+$ ]] || (( CPUS < 1 || CPUS > 16 )); then
+if ! CPUS=$(parse_uint "$CPUS") || (( CPUS < 1 || CPUS > 16 )); then
   die "--cpus harus 1..16."
 fi
 [[ "$ACCEL" == tcg || "$ACCEL" == kvm ]] || die "--accel harus tcg atau kvm."
@@ -73,6 +73,8 @@ find_first() {
 }
 if [[ -z "$FIRMWARE" ]]; then
   FIRMWARE=$(find_first \
+    /usr/share/edk2/aarch64/QEMU_EFI-pflash.raw \
+    /usr/share/edk2-arm-vars/QEMU_EFI-pflash.raw \
     /usr/share/edk2/aarch64/QEMU_EFI.fd \
     /usr/share/edk2-arm-vars/QEMU_EFI.fd \
     /usr/share/AAVMF/AAVMF_CODE.fd \
