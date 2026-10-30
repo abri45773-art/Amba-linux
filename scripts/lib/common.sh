@@ -12,6 +12,15 @@ valid_sha256() {
   [[ "$1" =~ ^[0-9a-fA-F]{64}$ ]]
 }
 
+# Parse an unsigned decimal integer without Bash's octal interpretation.
+# Leading zeros are accepted ("016" -> 16); oversized inputs are rejected
+# before they can overflow shell arithmetic.
+parse_uint() {
+  local value="$1"
+  [[ "$value" =~ ^[0-9]{1,9}$ ]] || return 1
+  printf '%s\n' "$((10#$value))"
+}
+
 valid_password_hash() {
   # SHA-512 crypt ($6$) or yescrypt ($y$). Plaintext and truncated hashes are rejected.
   local value="$1"
@@ -35,7 +44,7 @@ require_tools() {
 # Keep this in one place so tests and the builder exercise the same boot entry.
 render_boot_entry() {
   local root_uuid="$1"
-  [[ "$root_uuid" =~ ^[0-9a-fA-F-]{36}$ ]] || return 1
+  [[ "$root_uuid" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]] || return 1
   printf '%s\n' \
     'title   Amba Linux (ARM64)' \
     'linux   /Image' \

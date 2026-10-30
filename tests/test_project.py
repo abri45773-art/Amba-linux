@@ -80,6 +80,15 @@ class HelperTests(unittest.TestCase):
             result = bash(f"source scripts/lib/common.sh; valid_password_hash {quoted}")
             self.assertEqual(0 if value in valid else 1, result.returncode, value)
 
+    def test_parse_uint(self):
+        for value, expected in [("0", "0"), ("08", "8"), ("016", "16"), ("4096", "4096"), ("000000001", "1")]:
+            result = bash(f'source scripts/lib/common.sh; parse_uint "{value}"')
+            self.assertEqual(0, result.returncode, value)
+            self.assertEqual(expected, result.stdout.strip(), value)
+        for value in ["", "-1", "+1", "1.5", "abc", "1000000000", "1e3", "0x10"]:
+            result = bash(f'source scripts/lib/common.sh; parse_uint "{value}"')
+            self.assertNotEqual(0, result.returncode, value)
+
     def test_boot_entry(self):
         uuid = "12345678-1234-1234-1234-123456789abc"
         result = bash(f'source scripts/lib/common.sh; render_boot_entry "{uuid}"')
@@ -88,6 +97,12 @@ class HelperTests(unittest.TestCase):
         self.assertIn("initrd  /initramfs-linux.img", result.stdout)
         self.assertIn(f"root=UUID={uuid} rw rootwait", result.stdout)
         self.assertNotIn("/boot/Image", result.stdout)
+
+    def test_boot_entry_rejects_invalid_uuid(self):
+        for uuid in ["", "-" * 36, "12345678123412341234123456789abc", "12345678-1234-1234-1234-123456789abg", "12345678-1234-1234-1234-123456789abc-extra"]:
+            result = bash(f'source scripts/lib/common.sh; render_boot_entry "{uuid}"')
+            self.assertNotEqual(0, result.returncode, uuid)
+            self.assertEqual("", result.stdout, uuid)
 
 
 class ScriptTests(unittest.TestCase):
@@ -101,6 +116,18 @@ class ScriptTests(unittest.TestCase):
         result = subprocess.run(["./scripts/build-image.sh", "--size-gib", "1"], cwd=ROOT, text=True, capture_output=True)
         self.assertNotEqual(0, result.returncode)
         self.assertIn("12..128", result.stderr)
+
+    def test_build_rejects_octal_like_size_cleanly(self):
+        result = subprocess.run(["./scripts/build-image.sh", "--size-gib", "08"], cwd=ROOT, text=True, capture_output=True)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("12..128", result.stderr)
+        self.assertNotIn("value too great for base", result.stderr)
+
+    def test_build_normalizes_leading_zero_size(self):
+        result = subprocess.run(["./scripts/build-image.sh", "--size-gib", "016", "--dry-run"], cwd=ROOT, text=True, capture_output=True)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("(16 GiB", result.stdout)
+        self.assertNotIn("016 GiB", result.stdout)
 
     def test_build_rejects_reserved_user(self):
         result = subprocess.run(["./scripts/build-image.sh", "--user", "root"], cwd=ROOT, text=True, capture_output=True)
@@ -119,6 +146,23 @@ class ScriptTests(unittest.TestCase):
         result = subprocess.run(["./scripts/run-qemu.sh", "--image", "example.img", "--persistent", "--dry-run"], cwd=ROOT, text=True, capture_output=True)
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertNotIn("-snapshot", result.stdout)
+
+    def test_qemu_rejects_octal_like_memory_cleanly(self):
+        result = subprocess.run(["./scripts/run-qemu.sh", "--image", "example.img", "--memory", "08", "--dry-run"], cwd=ROOT, text=True, capture_output=True)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("2048..32768", result.stderr)
+        self.assertNotIn("value too great for base", result.stderr)
+
+    def test_qemu_normalizes_leading_zero_memory_and_cpus(self):
+        result = subprocess.run(["./scripts/run-qemu.sh", "--image", "example.img", "--memory", "04096", "--cpus", "04", "--dry-run"], cwd=ROOT, text=True, capture_output=True)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("-smp 4 ", result.stdout)
+        self.assertIn("-m 4096 ", result.stdout)
+
+    def test_qemu_prefers_pflash_firmware_image(self):
+        text = (ROOT / "scripts/run-qemu.sh").read_text()
+        self.assertIn("/usr/share/edk2/aarch64/QEMU_EFI-pflash.raw", text)
+        self.assertLess(text.index("QEMU_EFI-pflash.raw"), text.index("/usr/share/edk2/aarch64/QEMU_EFI.fd"))
 
     def test_builder_has_no_physical_disk_target(self):
         text = (ROOT / "scripts/build-image.sh").read_text()
