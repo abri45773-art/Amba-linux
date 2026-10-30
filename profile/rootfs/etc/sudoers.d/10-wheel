@@ -1,0 +1,2 @@
+## Amba Linux: administrators in wheel must authenticate.
+%wheel ALL=(ALL:ALL) ALL

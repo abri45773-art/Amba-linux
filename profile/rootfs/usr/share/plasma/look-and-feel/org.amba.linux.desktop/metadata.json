@@ -1,0 +1,12 @@
+{
+  "KPackageStructure": "Plasma/LookAndFeel",
+  "KPlugin": {
+    "Authors": [{"Name": "Amba Linux contributors"}],
+    "Category": "Plasma Look and Feel",
+    "Description": "Amba Linux desktop defaults",
+    "Id": "org.amba.linux.desktop",
+    "License": "AGPL-3.0-or-later",
+    "Name": "Amba Linux",
+    "Version": "0.1.0"
+  }
+}

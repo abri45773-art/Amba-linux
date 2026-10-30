@@ -1,0 +1,10 @@
+[KDE]
+LookAndFeelPackage=org.amba.linux.desktop
+SingleClick=false
+
+[General]
+ColorScheme=BreezeDark
+Name=Amba Linux
+
+[Icons]
+Theme=breeze-dark
