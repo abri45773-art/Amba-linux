@@ -19,8 +19,14 @@ Boot entry memakai:
 ```text
 linux   /Image
 initrd  /initramfs-linux.img
-options root=UUID=<uuid-root> rw rootwait console=tty0 console=ttyAMA0,115200
+options root=UUID=<uuid-root> rw rootwait nowatchdog console=tty0 console=ttyAMA0,115200
 ```
+
+`nowatchdog` mematikan timer lockup/NMI watchdog yang terus berjalan. Timer
+boot `systemd-boot` diatur 3 detik dan editor entri dinonaktifkan
+(`loader.conf`). Setelah `pacman -Syu` yang meng-upgrade `systemd`, hook
+`91-amba-systemd-boot.hook` menyalin ulang `systemd-bootaa64.efi` ke ESP agar
+bootloader tidak tertinggal versinya.
 
 Path kernel/initrd relatif terhadap ESP karena ESP dipasang di `/boot`. Kernel `linux-aarch64` Arch Linux ARM menyediakan EFI stub. DTB/ACPI harus disediakan oleh firmware UEFI; image generik tidak menanam satu DTB board tertentu.
 

@@ -101,6 +101,7 @@ RENCANA BUILD (tidak ada perubahan dilakukan)
   Locale       : $LOCALE, $TIMEZONE, keymap=$KEYMAP
   Boot         : systemd-boot, EFI/BOOT/BOOTAA64.EFI, tanpa Secure Boot
   Keamanan     : root dan user bawaan alarm dikunci; sudo memakai password
+  Optimasi     : noatime, zram, BBR/fq, I/O scheduler, journald dibatasi, fstrim
 EOF
   exit 0
 fi
@@ -116,6 +117,7 @@ if [[ -z "$ROOTFS_SHA256" ]] || ! valid_sha256 "$ROOTFS_SHA256"; then
 fi
 [[ -n "$PASSWORD_HASH_FILE" && -f "$PASSWORD_HASH_FILE" ]] || die "File password hash tidak ditemukan."
 PASSWORD_HASH=$(head -n 1 -- "$PASSWORD_HASH_FILE")
+PASSWORD_HASH=${PASSWORD_HASH%$'\r'}
 valid_password_hash "$PASSWORD_HASH" || die "Hash harus SHA-crypt (\$6\$) atau yescrypt (\$y\$), bukan password plaintext."
 
 ROOTFS=$(realpath -- "$ROOTFS")
@@ -153,6 +155,39 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
+# Run a command inside the target; log a warning instead of aborting the whole
+# build when an optional step (e.g. one missing systemd unit) is unavailable.
+chroot_soft() {
+  if ! arch-chroot "$ROOT_MNT" "$@"; then
+    warn "Langkah opsional gagal dan dilewati: $*"
+  fi
+}
+
+# Enabling a unit that does not exist used to abort the build with a confusing
+# error, so only enable units that are actually present in the target.
+unit_present() {
+  local unit=$1
+  [[ -e "$ROOT_MNT/usr/lib/systemd/system/$unit" || -e "$ROOT_MNT/etc/systemd/system/$unit" ]]
+}
+enable_units() {
+  local unit
+  for unit in "$@"; do
+    if unit_present "$unit"; then
+      arch-chroot "$ROOT_MNT" /usr/bin/systemctl enable "$unit"
+    else
+      warn "Unit $unit tidak tersedia di target; dilewati."
+    fi
+  done
+}
+disable_units() {
+  local unit
+  for unit in "$@"; do
+    if unit_present "$unit"; then
+      arch-chroot "$ROOT_MNT" /usr/bin/systemctl disable "$unit"
+    fi
+  done
+}
+
 log "Membuat image GPT ${SIZE_GIB} GiB..."
 truncate -s "${SIZE_GIB}G" "$IMAGE_WORK"
 sfdisk --quiet "$IMAGE_WORK" <<'EOF'
@@ -177,15 +212,31 @@ log "Mengekstrak rootfs Arch Linux ARM..."
 bsdtar -xpf "$ROOTFS" --numeric-owner -C "$ROOT_MNT"
 [[ -x "$ROOT_MNT/usr/bin/pacman" ]] || die "Arsip tidak berisi rootfs Arch yang diharapkan."
 
+# noatime: avoids a metadata write per read on flash storage.
+# errors=remount-ro: a corrupt filesystem goes read-only instead of continuing.
 cat > "$ROOT_MNT/etc/fstab" <<EOF
-UUID=$ROOT_UUID / ext4 rw,relatime 0 1
+UUID=$ROOT_UUID / ext4 rw,noatime,errors=remount-ro 0 1
 UUID=$ESP_UUID /boot vfat rw,relatime,fmask=0077,dmask=0077 0 2
 EOF
 
-log "Memperbarui basis dan memasang KDE Plasma (butuh internet)..."
+# Parallel package downloads: the Arch default is still commented out in the
+# Arch Linux ARM tarball, and a desktop profile is a large download.
+if grep -q '^#ParallelDownloads' "$ROOT_MNT/etc/pacman.conf"; then
+  sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 5/' "$ROOT_MNT/etc/pacman.conf"
+fi
+
+log "Menginisialisasi keyring dan basis paket..."
 arch-chroot "$ROOT_MNT" /usr/bin/pacman-key --init
 arch-chroot "$ROOT_MNT" /usr/bin/pacman-key --populate archlinuxarm
+# The keyring shipped inside the tarball can be older than the newest signing
+# keys. Refresh it first (non-fatal); the full upgrade below still verifies
+# every signature, so a stale keyring is reported instead of silently trusted.
+chroot_soft /usr/bin/pacman -Sy --needed --noconfirm archlinuxarm-keyring
+
 mapfile -t PACKAGES < <(sed -e 's/#.*//' -e '/^[[:space:]]*$/d' "$REPO_DIR/profile/packages.aarch64.txt")
+((${#PACKAGES[@]} > 0)) || die "profile/packages.aarch64.txt kosong."
+
+log "Memperbarui basis dan memasang KDE Plasma (butuh internet)..."
 arch-chroot "$ROOT_MNT" /usr/bin/pacman -Syu --needed --noconfirm "${PACKAGES[@]}"
 
 log "Menerapkan branding dan konfigurasi Amba..."
@@ -196,6 +247,15 @@ install -Dm644 "$REPO_DIR/profile/VERSION" "$ROOT_MNT/usr/share/amba/VERSION"
 arch-chroot "$ROOT_MNT" /usr/lib/amba/apply-branding
 
 printf '%s\n' "$DISTRO_HOSTNAME" > "$ROOT_MNT/etc/hostname"
+# Without a 127.0.1.1 entry the local hostname resolves through the network,
+# which makes sudo/Plasma lookups slow and sometimes fail on offline boots.
+cat > "$ROOT_MNT/etc/hosts" <<EOF
+# Static table lookup for the hostname; see hosts(5).
+127.0.0.1        localhost
+::1              localhost
+127.0.1.1        ${DISTRO_HOSTNAME}.localdomain ${DISTRO_HOSTNAME}
+EOF
+
 printf 'LANG=%s\n' "$LOCALE" > "$ROOT_MNT/etc/locale.conf"
 printf 'KEYMAP=%s\n' "$KEYMAP" > "$ROOT_MNT/etc/vconsole.conf"
 cat > "$ROOT_MNT/etc/locale.gen" <<EOF
@@ -206,11 +266,15 @@ EOF
 arch-chroot "$ROOT_MNT" /usr/bin/ln -snf "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
 arch-chroot "$ROOT_MNT" /usr/bin/locale-gen
 arch-chroot "$ROOT_MNT" /usr/bin/systemctl set-default graphical.target
-arch-chroot "$ROOT_MNT" /usr/bin/systemctl disable systemd-networkd.service systemd-networkd.socket
-arch-chroot "$ROOT_MNT" /usr/bin/systemctl enable NetworkManager.service sddm.service systemd-resolved.service systemd-timesyncd.service bluetooth.service
+disable_units systemd-networkd.service systemd-networkd.socket
+enable_units NetworkManager.service sddm.service systemd-resolved.service \
+  systemd-timesyncd.service bluetooth.service fstrim.timer systemd-oomd.service \
+  power-profiles-daemon.service
 
 log "Membuat user dan mengunci akun bawaan..."
-arch-chroot "$ROOT_MNT" /usr/bin/useradd --create-home --groups wheel --shell /bin/bash "$USERNAME"
+# -U gives the account its own private primary group instead of the shared
+# "users" group, which is the Arch default.
+arch-chroot "$ROOT_MNT" /usr/bin/useradd --create-home --user-group --groups wheel --shell /bin/bash "$USERNAME"
 printf '%s:%s\n' "$USERNAME" "$PASSWORD_HASH" | arch-chroot "$ROOT_MNT" /usr/bin/chpasswd -e
 arch-chroot "$ROOT_MNT" /usr/bin/passwd -l root
 if arch-chroot "$ROOT_MNT" /usr/bin/getent passwd alarm >/dev/null; then
@@ -222,6 +286,8 @@ arch-chroot "$ROOT_MNT" /usr/bin/visudo -cf /etc/sudoers
 # Unique identity on first boot, not a machine-id shared by every downloaded image.
 : > "$ROOT_MNT/etc/machine-id"
 rm -f "$ROOT_MNT/var/lib/dbus/machine-id"
+# journald writes to /var/log/journal because of the shipped journald drop-in.
+arch-chroot "$ROOT_MNT" /usr/bin/install -d -g systemd-journal -m 2755 /var/log/journal
 
 log "Membangun initramfs dan bootloader ARM64 UEFI..."
 arch-chroot "$ROOT_MNT" /usr/bin/mkinitcpio -P
@@ -232,7 +298,7 @@ install -m644 "$ROOT_MNT/usr/lib/systemd/boot/efi/systemd-bootaa64.efi" "$ROOT_M
 install -m644 "$ROOT_MNT/usr/lib/systemd/boot/efi/systemd-bootaa64.efi" "$ROOT_MNT/boot/EFI/systemd/systemd-bootaa64.efi"
 cat > "$ROOT_MNT/boot/loader/loader.conf" <<'EOF'
 default amba.conf
-timeout 5
+timeout 3
 console-mode keep
 editor no
 EOF

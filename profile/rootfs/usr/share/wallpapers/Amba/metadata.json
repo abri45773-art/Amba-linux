@@ -1,4 +1,5 @@
 {
+  "KPackageStructure": "Wallpaper/Images",
   "KPlugin": {
     "Authors": [{"Name": "Amba Linux contributors"}],
     "Id": "Amba",

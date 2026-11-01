@@ -3,6 +3,7 @@ Operation = Install
 Operation = Upgrade
 Type = Path
 Target = usr/lib/os-release
+Target = usr/share/amba/os-release
 
 [Action]
 Description = Reapplying Amba Linux release identity...

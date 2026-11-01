@@ -1,0 +1,16 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Refresh the systemd-boot binaries on the ESP after a systemd upgrade.
+# The image ships the removable-media fallback instead of using bootctl, so
+# nothing else keeps EFI/BOOT/BOOTAA64.EFI in sync with the installed systemd.
+set -euo pipefail
+
+AMBA_DESTDIR=${AMBA_DESTDIR:-}
+ESP=${AMBA_ESP:-$AMBA_DESTDIR/boot}
+SRC="$AMBA_DESTDIR/usr/lib/systemd/boot/efi/systemd-bootaa64.efi"
+
+[[ -f "$SRC" ]] || exit 0
+[[ -d "$ESP/EFI" ]] || exit 0
+
+install -Dm644 "$SRC" "$ESP/EFI/BOOT/BOOTAA64.EFI"
+install -Dm644 "$SRC" "$ESP/EFI/systemd/systemd-bootaa64.efi"

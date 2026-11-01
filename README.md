@@ -19,6 +19,8 @@
 | Filesystem | GPT: ESP FAT32 512 MiB + root ext4 |
 | Image | Raw disk image persisten, bukan live ISO |
 | Bahasa/locale awal | `id_ID.UTF-8`, zona waktu `Asia/Jakarta` |
+| Swap | zram (swap terkompresi di RAM), bukan partisi swap |
+| Optimasi bawaan | `noatime`, BBR+fq, scheduler I/O per device, batas journald, `fstrim` |
 
 **Catatan penting:** Arch Linux resmi hanya menargetkan x86_64. Untuk ARM64, proyek ini memakai **Arch Linux ARM**, proyek komunitas terpisah. UEFI ARM64 juga tidak menjamin semua laptop/server ARM dapat boot; dukungan bergantung pada firmware, ACPI/Device Tree, kernel, dan driver perangkat.
 
@@ -28,13 +30,18 @@
 profile/
   packages.aarch64.txt       Daftar paket desktop ARM64
   rootfs/                    Overlay konfigurasi, branding, tema, wallpaper
+    etc/sddm.conf.d/         Drop-in SDDM (path yang benar-benar dibaca SDDM)
+    etc/sysctl.d/            Tuning memori, jaringan, inotify
+    etc/systemd/             zram-generator, batas journald
+    etc/udev/rules.d/        Pemilihan I/O scheduler per jenis device
+    usr/lib/amba/            Skrip branding dan pembaru systemd-boot
 scripts/
   build-image.sh             Pembuat image disk di host Arch Linux ARM aarch64
   run-qemu.sh                Menjalankan image di QEMU ARM64 UEFI
   render-wallpaper.py        Render wallpaper PNG tanpa dependensi eksternal
   lib/common.sh              Validasi dan helper boot entry
 tests/                       Tes statis/offline
-docs/                        Panduan build, boot, pengujian, keamanan
+docs/                        Panduan build, boot, pengujian, keamanan, changelog
 ```
 
 ## Mulai cepat
@@ -80,12 +87,27 @@ Untuk host x86_64, QEMU memakai emulasi TCG sehingga lambat. Untuk pengujian yan
 ## Pemeriksaan tanpa build
 
 ```bash
-make check       # syntax Bash + unit test offline
+make check       # syntax Bash + unit test offline (44 tes)
 make lint        # memerlukan shellcheck
 make dry-run     # menampilkan rencana build tanpa perubahan
+make wallpaper   # render ulang wallpaper 4K (bisa WIDTH=/HEIGHT=/OUTPUT=)
 ```
 
 Tes offline **tidak** membuktikan image dapat boot, KDE dapat masuk, Wi-Fi/GPU bekerja, atau perangkat tertentu kompatibel. Lihat [docs/TESTING.md](docs/TESTING.md).
+
+## Optimasi bawaan
+
+- Root ext4 memakai `noatime,errors=remount-ro`.
+- **zram** (`zram-generator`, zstd) sebagai swap terkompresi, cocok untuk board
+  ARM ber-RAM kecil dengan storage lambat.
+- Jaringan memakai `fq` + **BBR**; batas inotify dinaikkan untuk Plasma/IDE.
+- udev memilih `none` untuk NVMe/virtio-blk dan `mq-deadline` untuk eMMC/SATA.
+- Initramfs zstd (`-T0`) dan hanya locale yang dipakai yang di-generate.
+- Journald dibatasi 200 MB dengan kompresi; `fstrim.timer` aktif.
+- `systemd-boot` timeout 3 detik, kernel cmdline memakai `nowatchdog`.
+
+Rincian dan alasan tiap pilihan ada di [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+dan [docs/CHANGELOG.md](docs/CHANGELOG.md).
 
 ## Keamanan bawaan
 
@@ -105,6 +127,7 @@ Tes offline **tidak** membuktikan image dapat boot, KDE dapat masuk, Wi-Fi/GPU b
 - [Keamanan](docs/SECURITY.md)
 - [Arsitektur](docs/ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Changelog](docs/CHANGELOG.md)
 - [Pihak ketiga dan lisensi](THIRD_PARTY.md)
 
 ## Lisensi

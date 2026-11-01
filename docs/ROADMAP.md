@@ -6,7 +6,10 @@
 - [x] Branding Amba dan hook pacman
 - [x] Builder image GPT/UEFI native aarch64
 - [x] Skrip QEMU ARM64 UEFI
-- [x] Tes offline dan dokumentasi
+- [x] Tes offline (44 tes) dan dokumentasi
+- [x] Tuning runtime: zram, BBR, I/O scheduler, batas journald, `fstrim`
+- [x] Perbaikan bug drop-in SDDM, `/etc/hosts`, dan sinkronisasi systemd-boot
+- [x] CHANGELOG proyek
 - [ ] Build nyata di host Arch Linux ARM
 - [ ] Uji boot QEMU dan perangkat target
 
@@ -16,6 +19,7 @@
 - [ ] Catat firmware, ACPI/DTB, GPU, Wi-Fi, audio, suspend
 - [ ] Tambahkan quirks hanya bila diperlukan
 - [ ] Uji upgrade paket dan regenerasi initramfs
+- [ ] Uji idempotensi hook branding dan pembaru systemd-boot di perangkat nyata
 
 ## 0.3 — distribusi
 
