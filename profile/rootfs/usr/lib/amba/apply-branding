@@ -1,9 +1,39 @@
 #!/usr/bin/bash
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Called by the image builder and by a pacman hook after filesystem upgrades.
+# AMBA_DESTDIR exists so the script can be exercised offline against a staging
+# directory; the image itself runs it with the default (/) prefix.
 set -euo pipefail
-install -Dm644 /usr/share/amba/os-release /usr/lib/os-release
-ln -snf ../usr/lib/os-release /etc/os-release
-if [[ -f /usr/share/amba/VERSION ]]; then
-  install -Dm644 /usr/share/amba/VERSION /usr/lib/amba/VERSION
+
+DESTDIR=${AMBA_DESTDIR:-}
+SRC_OS_RELEASE="$DESTDIR/usr/share/amba/os-release"
+SRC_VERSION="$DESTDIR/usr/share/amba/VERSION"
+
+if [[ ! -r "$SRC_OS_RELEASE" ]]; then
+  echo "apply-branding: $SRC_OS_RELEASE tidak ditemukan" >&2
+  exit 1
+fi
+
+tmp=$(mktemp)
+trap 'rm -f "$tmp"' EXIT
+
+# /usr/lib/os-release is owned by the "filesystem" package, so an upgrade can
+# ship a plain Arch release file. Rebuild it from the Amba template and add
+# VERSION_ID from the shipped VERSION file so tools that read os-release still
+# report a version.
+grep -v -E '^(VERSION_ID|VERSION)=' "$SRC_OS_RELEASE" > "$tmp" || true
+if [[ -r "$SRC_VERSION" ]]; then
+  version=$(head -n 1 "$SRC_VERSION")
+  version=${version%$'\r'}
+  if [[ -n "$version" ]]; then
+    printf 'VERSION_ID="%s"\n' "$version" >> "$tmp"
+    printf 'VERSION="%s (rolling)"\n' "$version" >> "$tmp"
+  fi
+fi
+
+install -Dm644 "$tmp" "$DESTDIR/usr/lib/os-release"
+ln -snf ../usr/lib/os-release "$DESTDIR/etc/os-release"
+
+if [[ -r "$SRC_VERSION" ]]; then
+  install -Dm644 "$SRC_VERSION" "$DESTDIR/usr/lib/amba/VERSION"
 fi

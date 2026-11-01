@@ -1,46 +1,16 @@
 # Amba Linux desktop profile. Installed from Arch Linux ARM repositories.
 # One package per line; comments and blank lines are ignored.
+
+# Base system and ARM64 kernel
 base
 linux-aarch64
 linux-firmware
 mkinitcpio
 archlinuxarm-keyring
+
+# Networking and services
 networkmanager
 sudo
-plasma-desktop
-plasma-workspace
-systemsettings
-kwin
-kscreen
-bluedevil
-plasma-nm
-plasma-pa
-powerdevil
-breeze
-breeze-gtk
-kde-gtk-config
-xdg-desktop-portal-kde
-sddm
-konsole
-dolphin
-kate
-ark
-gwenview
-gvfs
-firefox
-pipewire
-pipewire-pulse
-wireplumber
-mesa
-vulkan-swrast
-vulkan-virtio
-bluez
-bluez-utils
-upower
-udisks2
-noto-fonts
-ttf-dejavu
-ttf-liberation
 ca-certificates
 curl
 git
@@ -49,3 +19,59 @@ man-db
 man-pages
 usbutils
 pciutils
+
+# KDE Plasma desktop
+plasma-desktop
+plasma-workspace
+systemsettings
+kwin
+kscreen
+breeze
+breeze-gtk
+kde-gtk-config
+xdg-desktop-portal-kde
+polkit-kde-agent
+sddm
+konsole
+dolphin
+kate
+ark
+gwenview
+gvfs
+xdg-utils
+
+# Applications
+firefox
+
+# Audio and multimedia (PipeWire, with UCM profiles for ARM codecs)
+pipewire
+pipewire-pulse
+pipewire-alsa
+wireplumber
+alsa-ucm-conf
+alsa-utils
+
+# Graphics
+mesa
+vulkan-swrast
+vulkan-virtio
+
+# Bluetooth, power and hotplug
+bluez
+bluez-utils
+upower
+udisks2
+power-profiles-daemon
+plasma-nm
+plasma-pa
+powerdevil
+bluedevil
+
+# Performance: compressed RAM swap on low-memory ARM boards
+zram-generator
+
+# Fonts
+noto-fonts
+noto-fonts-emoji
+ttf-dejavu
+ttf-liberation

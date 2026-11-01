@@ -63,13 +63,23 @@ Opsi lain:
 Alur builder:
 
 1. Validasi input, host aarch64, dan SHA-256 rootfs.
-2. Buat file image sparse, partisi GPT, ESP FAT32, root ext4.
-3. Mount image melalui loop device dan ekstrak rootfs.
-4. Inisialisasi keyring Arch Linux ARM, lalu `pacman -Syu --needed` paket profil.
-5. Terapkan overlay Amba: os-release, hook branding, SDDM, sudoers, mkinitcpio, tema, wallpaper.
-6. Buat user desktop, kunci `root` dan `alarm`, aktifkan layanan.
-7. Bangun initramfs, pasang `systemd-bootaa64.efi` ke fallback UEFI, tulis boot entry.
-8. Bersihkan cache, lepas mount/loop, pindahkan image ke `out/`, buat checksum.
+2. Buat file image sparse, partisi GPT, ESP FAT32 512 MiB, root ext4.
+3. Mount image melalui loop device, ekstrak rootfs, tulis `/etc/fstab`
+   (`noatime,errors=remount-ro`) dan aktifkan `ParallelDownloads`.
+4. Inisialisasi keyring Arch Linux ARM, **segarkan `archlinuxarm-keyring`**
+   (tidak fatal), lalu `pacman -Syu --needed` untuk paket profil.
+5. Terapkan overlay Amba: os-release + `VERSION_ID`, hook branding, drop-in
+   SDDM, hook systemd-boot, sudoers, mkinitcpio, tuning sysctl/udev/journald,
+   tema, dan wallpaper.
+6. Tulis `/etc/hostname` dan `/etc/hosts` (termasuk `127.0.1.1`) agar hostname
+   ter-resolve lokal.
+7. Buat user desktop dengan grup privat, kunci `root` dan `alarm`, aktifkan
+   layanan (`NetworkManager`, `sddm`, `systemd-resolved`, `fstrim.timer`,
+   `systemd-oomd`, `power-profiles-daemon`). Unit yang tidak tersedia hanya
+   memunculkan peringatan, bukan menggagalkan build.
+8. Bangun initramfs zstd, pasang `systemd-bootaa64.efi` ke fallback UEFI, tulis
+   boot entry.
+9. Bersihkan cache, lepas mount/loop, pindahkan image ke `out/`, buat checksum.
 
 Jika gagal, mount/loop dibersihkan oleh trap dan direktori kerja disimpan untuk diagnosis. Jangan menghapus direktori kerja sebelum memastikan tidak ada mount aktif:
 
@@ -90,13 +100,22 @@ Image adalah sistem persisten bergaya installed-system. Ini **bukan** live ISO d
 
 - Paket: `profile/packages.aarch64.txt`
 - Identitas rilis: `profile/rootfs/usr/share/amba/os-release`
+  (`VERSION_ID` diambil otomatis dari `profile/VERSION` oleh `apply-branding`)
 - Tema KDE: `profile/rootfs/usr/share/plasma/look-and-feel/org.amba.linux.desktop/`
 - Wallpaper sumber: `scripts/render-wallpaper.py`
 - Initramfs: `profile/rootfs/etc/mkinitcpio.conf`
+- Tuning runtime: `profile/rootfs/etc/sysctl.d/`,
+  `profile/rootfs/etc/udev/rules.d/60-amba-io-scheduler.rules`,
+  `profile/rootfs/etc/systemd/zram-generator.conf`,
+  `profile/rootfs/etc/systemd/journald.conf.d/`
 
 Setelah mengubah wallpaper:
 
 ```bash
-make wallpaper
+make wallpaper            # 3840x2160, ~2 detik
+make wallpaper WIDTH=1920 HEIGHT=1080 OUTPUT=out/amba-1080p.png
 make check
 ```
+
+Setelah mengubah tuning, jalankan `make check`: tes offline memastikan setiap
+drop-in tetap bisa diparse dan nilainya sesuai dokumentasi.

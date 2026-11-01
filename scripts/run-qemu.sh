@@ -94,6 +94,7 @@ CMD=(qemu-system-aarch64 -machine virt -smp "$CPUS" -m "$MEMORY"
   -drive "if=none,format=raw,file=${IMAGE},id=amba-disk"
   -device "virtio-blk-pci,drive=amba-disk"
   -device virtio-gpu-pci
+  -device virtio-rng-pci
   -device qemu-xhci -device usb-kbd -device usb-tablet
   -netdev "user,id=amba-net" -device "virtio-net-pci,netdev=amba-net"
   -serial mon:stdio)
@@ -111,6 +112,9 @@ require_tools qemu-system-aarch64 mktemp cp
 [[ -f "$IMAGE" ]] || die "Image tidak ditemukan: $IMAGE"
 [[ -n "$FIRMWARE" && -f "$FIRMWARE" ]] || die "Firmware UEFI ARM64 tidak ditemukan. Pasang edk2-aarch64 (Arch) atau qemu-efi-aarch64 (Debian), lalu isi --firmware."
 [[ -n "$VARS" && -f "$VARS" ]] || die "Template UEFI VARS tidak ditemukan. Isi --vars."
+# pflash needs two images of identical size; mixing e.g. a 2 MiB AAVMF_CODE.fd
+# with a 64 MiB vars template makes QEMU fail with an unrelated pflash error.
+files_have_same_size "$FIRMWARE" "$VARS" || die "Firmware dan VARS harus berukuran sama untuk pflash ($(stat -Lc %s -- "$FIRMWARE") vs $(stat -Lc %s -- "$VARS") byte). Gunakan pasangan dari paket yang sama."
 if [[ "$ACCEL" == kvm ]]; then
   [[ $(uname -m) == aarch64 && -w /dev/kvm ]] || die "KVM memerlukan host aarch64 dan akses tulis /dev/kvm."
 fi
@@ -120,10 +124,13 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 cp -- "$VARS" "$TMP_DIR/VARS.fd"
-# Replace only the placeholder argument, preserving all other quoting.
+# Replace only the VARS argument, preserving all other quoting. Comparing
+# against a pre-quoted variable keeps the match literal instead of a glob.
+vars_arg="if=pflash,format=raw,file=$VARS"
+vars_tmp="if=pflash,format=raw,file=$TMP_DIR/VARS.fd"
 for i in "${!CMD[@]}"; do
-  if [[ "${CMD[$i]}" == "if=pflash,format=raw,file=$VARS" ]]; then
-    CMD[i]="if=pflash,format=raw,file=$TMP_DIR/VARS.fd"
+  if [[ "${CMD[$i]}" == "$vars_arg" ]]; then
+    CMD[i]="$vars_tmp"
   fi
 done
 log "Menjalankan QEMU. Disk $([[ $PERSISTENT -eq 1 ]] && echo PERSISTEN || echo snapshot/sementara)."

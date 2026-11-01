@@ -1,0 +1,13 @@
+# Amba Linux: low-overhead I/O scheduler per device class.
+# "none" (no scheduler) is the fastest option for NVMe and virtio-blk, which do
+# their own queueing. eMMC/SD and SATA keep mq-deadline so that reads are not
+# starved by bursts of writes.
+ACTION=="add|change", KERNEL=="nvme[0-9]*n[0-9]*", ATTR{queue/scheduler}="none"
+ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{queue/scheduler}="none"
+ACTION=="add|change", KERNEL=="mmcblk[0-9]*", ATTR{queue/scheduler}="mq-deadline"
+ACTION=="add|change", KERNEL=="sd[a-z]", ATTR{queue/scheduler}="mq-deadline"
+
+# Bigger read-ahead for sequential boot, package and image work on flash.
+ACTION=="add|change", KERNEL=="nvme[0-9]*n[0-9]*", ATTR{queue/read_ahead_kb}="512"
+ACTION=="add|change", KERNEL=="vd[a-z]", ATTR{queue/read_ahead_kb}="512"
+ACTION=="add|change", KERNEL=="mmcblk[0-9]*", ATTR{queue/read_ahead_kb}="256"
