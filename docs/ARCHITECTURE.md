@@ -51,7 +51,10 @@ dicabut tanpa menyentuh paket Arch Linux ARM.
 | `etc/systemd/zram-generator.conf` | Swap terkompresi di RAM (zstd); board ARM sering ber-RAM kecil dengan eMMC/SD lambat |
 | `etc/sysctl.d/99-amba-memory.conf` | `swappiness=180` + `page-cluster=0` cocok untuk zram; `max_map_count` untuk browser/Plasma |
 | `etc/sysctl.d/99-amba-network.conf` | `fq` + BBR menurunkan latensi tanpa tuning manual |
-| `etc/sysctl.d/99-amba-desktop.conf` | Batas inotify default terlalu kecil untuk Plasma indexing dan IDE |
+| `etc/sysctl.d/99-amba-desktop.conf` | Batas inotify default terlalu kecil untuk Plasma indexing dan IDE; `sched_autogroup`, `fs.file-max`, NMI watchdog off untuk respons desktop |
+| `etc/sysctl.d/99-amba-memory.conf` | Interval writeback diperpanjang (`dirty_expire/writeback_centisecs`) mengurangi wear eMMC/SD |
+| `etc/xdg/baloofilerc` | Indexing Baloo nonaktif default (hemat CPU/flash saat login); bisa diaktifkan lagi per pengguna |
+| `etc/systemd/system.conf.d/10-amba.conf` | Timeout start 20s / stop 10s supaya satu unit macet tidak menahan boot 90 detik |
 | `etc/udev/rules.d/60-amba-io-scheduler.rules` | `none` untuk NVMe/virtio-blk, `mq-deadline` untuk eMMC/SATA |
 | `etc/systemd/journald.conf.d/10-amba.conf` | Journal dibatasi agar image 16 GiB tidak penuh oleh log |
 | `etc/mkinitcpio.conf` | zstd `-T0` lebih cepat dibuat dan didekompresi; modul virtio eksplisit |

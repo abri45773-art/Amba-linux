@@ -1,0 +1,7 @@
+# Amba Linux: file indexing off by default.
+# Baloo's indexer can pin a CPU core and hammer eMMC/SD on low-end ARM boards
+# right after login, making the desktop feel sluggish. Users who want
+# full-text search can re-enable it in System Settings > Search, or set
+# Indexing-Enabled=true in ~/.config/baloofilerc (per-user overrides this file).
+[General]
+Indexing-Enabled=false
