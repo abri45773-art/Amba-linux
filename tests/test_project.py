@@ -165,6 +165,24 @@ class ProfileTests(unittest.TestCase):
 
         desktop = sysctl_values(PROFILE / "etc/sysctl.d/99-amba-desktop.conf")
         self.assertGreater(int(desktop["fs.inotify.max_user_watches"]), 8192)
+        self.assertEqual("1", desktop["kernel.sched_autogroup_enabled"])
+        self.assertGreater(int(desktop["fs.file-max"]), 65530)
+        self.assertEqual("0", desktop["kernel.nmi_watchdog"])
+
+        # Baloo indexing is off by default (CPU/flash savings on ARM boards)
+        # and can be re-enabled per user.
+        baloo = parse_ini_like(PROFILE / "etc/xdg/baloofilerc")
+        self.assertEqual("false", baloo["General"]["Indexing-Enabled"].lower())
+
+        # systemd fails fast instead of waiting 90s per stuck unit at boot.
+        manager = parse_ini_like(PROFILE / "etc/systemd/system.conf.d/10-amba.conf")
+        self.assertEqual("20s", manager["Manager"]["DefaultTimeoutStartSec"])
+        self.assertEqual("10s", manager["Manager"]["DefaultTimeoutStopSec"])
+
+        # /tmp lives on tmpfs so temp files never hit flash; zram covers overflow.
+        builder = (ROOT / "scripts/build-image.sh").read_text()
+        self.assertIn("tmpfs /tmp tmpfs", builder)
+        self.assertIn("size=50%", builder)
 
         zram = parse_ini_like(PROFILE / "etc/systemd/zram-generator.conf")
         self.assertIn("zram-size", zram["zram0"])

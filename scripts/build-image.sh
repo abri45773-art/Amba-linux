@@ -214,9 +214,12 @@ bsdtar -xpf "$ROOTFS" --numeric-owner -C "$ROOT_MNT"
 
 # noatime: avoids a metadata write per read on flash storage.
 # errors=remount-ro: a corrupt filesystem goes read-only instead of continuing.
+# /tmp on tmpfs: temp files never touch flash; size=50% caps RAM use and any
+# overflow pages can still be swapped out to the zram device (priority 100).
 cat > "$ROOT_MNT/etc/fstab" <<EOF
 UUID=$ROOT_UUID / ext4 rw,noatime,errors=remount-ro 0 1
 UUID=$ESP_UUID /boot vfat rw,relatime,fmask=0077,dmask=0077 0 2
+tmpfs /tmp tmpfs rw,noatime,size=50%,mode=1777 0 0
 EOF
 
 # Parallel package downloads: the Arch default is still commented out in the

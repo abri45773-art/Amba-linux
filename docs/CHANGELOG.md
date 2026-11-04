@@ -72,3 +72,19 @@ Semua perubahan penting proyek ini dicatat di sini. Format mengikuti
 14. QEMU: `virtio-rng-pci` mengurangi boot yang tertahan menunggu entropi.
 15. Tes offline bertambah dari 22 menjadi 44, termasuk eksekusi
     `apply-branding`, `update-systemd-boot`, dan render wallpaper berskala.
+16. **`/tmp` sebagai tmpfs** (`size=50%`, `noatime`) di fstab yang dibuat
+    builder — file sementara tidak lagi menulis ke eMMC/SD; halaman melebihi
+    batas dapat di-swap ke zram (prioritas 100).
+17. **Interval writeback diperpanjang** (`vm.dirty_expire_centisecs=3000`,
+    `vm.dirty_writeback_centisecs=1500`) sehingga flush digabung menjadi lebih
+    sedikit dan besar, mengurangi wear flash dan jitter I/O.
+18. **sysctl desktop/jaringan baru**: `kernel.sched_autogroup_enabled=1` (job
+    latar belakang tidak mengganggu jendela interaktif), `fs.file-max=2097152`,
+    `kernel.nmi_watchdog=0`, `tcp_tw_reuse=1`, `somaxconn`/`tcp_max_syn_backlog`
+    4096.
+19. **Baloo nonaktif default** (`/etc/xdg/baloofilerc`) — indexer tidak lagi
+    membebani CPU dan eMMC saat login di board ARM lemah; dapat diaktifkan
+    kembali via System Settings atau `~/.config/baloofilerc`.
+20. **systemd fail-fast**: `DefaultTimeoutStartSec=20s`, `DefaultTimeoutStopSec
+    =10s`, `DefaultDeviceTimeoutSec=10s` agar satu unit macet tidak menahan
+    boot selama 90 detik.

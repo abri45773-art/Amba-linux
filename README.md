@@ -20,7 +20,7 @@
 | Image | Raw disk image persisten, bukan live ISO |
 | Bahasa/locale awal | `id_ID.UTF-8`, zona waktu `Asia/Jakarta` |
 | Swap | zram (swap terkompresi di RAM), bukan partisi swap |
-| Optimasi bawaan | `noatime`, BBR+fq, scheduler I/O per device, batas journald, `fstrim` |
+| Optimasi bawaan | `noatime` + `/tmp` tmpfs, zram, BBR+fq, scheduler I/O per device, batas journald, `fstrim`, Baloo nonaktif default |
 
 **Catatan penting:** Arch Linux resmi hanya menargetkan x86_64. Untuk ARM64, proyek ini memakai **Arch Linux ARM**, proyek komunitas terpisah. UEFI ARM64 juga tidak menjamin semua laptop/server ARM dapat boot; dukungan bergantung pada firmware, ACPI/Device Tree, kernel, dan driver perangkat.
 
