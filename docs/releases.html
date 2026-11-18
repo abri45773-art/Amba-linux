@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rilis Amba Linux 0.1.0 — Unduh APK &amp; Source</title>
+<meta name="description" content="Distro Linux ARM64 berbasis Arch Linux ARM dengan KDE Plasma — unduh APK pendamping, source code ZIP/TAR.GZ, dan checksum rilis 0.1.0.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="../profile/rootfs/usr/share/icons/hicolor/scalable/apps/amba.svg" type="image/svg+xml">
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #16233a;
+    --panel-2: #1b2b45;
+    --line: #27405c;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #2dd4bf;
+    --accent-dark: #0f766e;
+    --warn: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Inter", "Noto Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(1100px 620px at 12% -10%, rgba(45, 212, 191, .18), transparent 60%),
+      radial-gradient(900px 520px at 92% 0%, rgba(15, 118, 110, .25), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  a { color: var(--accent); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 40px 22px 72px; }
+  header.hero { display: flex; gap: 20px; align-items: center; margin-bottom: 8px; }
+  header.hero img { width: 76px; height: 76px; flex: none; }
+  h1 { font-size: clamp(1.9rem, 4vw, 2.7rem); margin: 0; letter-spacing: -.02em; }
+  .tagline { color: var(--muted); margin: 6px 0 0; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 30px; }
+  .pill {
+    border: 1px solid var(--line); border-radius: 999px; padding: 5px 13px;
+    font-size: .82rem; color: var(--muted); background: rgba(22, 35, 58, .6);
+  }
+  .pill strong { color: var(--text); font-weight: 600; }
+  section { margin-bottom: 44px; }
+  h2 { font-size: 1.22rem; margin: 0 0 4px; }
+  .section-note { color: var(--muted); margin: 0 0 18px; font-size: .95rem; }
+  .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); }
+  .mini-steps { margin: 0; padding-left: 18px; color: var(--muted); font-size: .86rem; display: grid; gap: 6px; }
+  .mini-steps li strong { color: var(--text); display: block; font-size: .88rem; }
+  .mini-steps code { background: rgba(15, 23, 42, .7); padding: 1px 5px; border-radius: 5px; }
+  .card {
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--line); border-radius: 16px; padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .card header { display: flex; align-items: start; gap: 12px; }
+  .card header div { flex: 1; min-width: 0; }
+  .icon { font-size: 1.5rem; line-height: 1; }
+  .card h3 { font-size: 1.02rem; margin: 0; }
+  .filename { margin: 2px 0 0; }
+  code {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .84em;
+  }
+  .filename code { color: var(--muted); word-break: break-all; }
+  .badge { font-size: .7rem; border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+  .badge-ready { background: rgba(45, 212, 191, .16); color: var(--accent); border: 1px solid rgba(45, 212, 191, .4); }
+  .badge-pending { background: rgba(251, 191, 36, .12); color: var(--warn); border: 1px solid rgba(251, 191, 36, .35); }
+  .description { color: var(--muted); margin: 0; font-size: .92rem; }
+  dl { margin: 0; display: grid; gap: 6px; font-size: .88rem; }
+  dl div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed rgba(148, 163, 184, .16); padding-bottom: 5px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; text-align: right; }
+  .checksum { background: rgba(15, 23, 42, .75); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; overflow-x: auto; }
+  .checksum code { color: var(--accent); font-size: .74rem; word-break: break-all; }
+  .card footer { margin-top: auto; }
+  .button {
+    display: inline-block; text-align: center; width: 100%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: #04231f; font-weight: 700; text-decoration: none;
+    padding: 11px 16px; border-radius: 11px;
+  }
+  .button:hover { filter: brightness(1.08); }
+  .button-disabled { background: rgba(148, 163, 184, .16); color: var(--muted); cursor: not-allowed; }
+  .steps { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  .steps li { position: relative; padding-left: 44px; color: var(--muted); }
+  .steps li strong { color: var(--text); display: block; }
+  .steps li::before {
+    counter-increment: step; content: counter(step);
+    position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center; font-size: .82rem; font-weight: 700;
+    color: var(--accent); background: rgba(45, 212, 191, .14); border: 1px solid rgba(45, 212, 191, .4);
+  }
+  .codeblock {
+    background: rgba(15, 23, 42, .8); border: 1px solid var(--line); border-radius: 12px;
+    padding: 15px 17px; overflow-x: auto; margin: 0;
+  }
+  .codeblock code { font-size: .8rem; color: #cbd5e1; }
+  .facts { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); display: grid; gap: 8px 24px; }
+  .note {
+    border-left: 3px solid var(--warn); background: rgba(251, 191, 36, .07);
+    padding: 13px 16px; border-radius: 0 10px 10px 0; color: var(--muted); font-size: .92rem;
+  }
+  .muted { color: var(--muted); font-size: .92rem; }
+  footer.page { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 20px; color: var(--muted); font-size: .88rem; }
+  footer.page a { margin-right: 14px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .card { transition: transform .15s ease, border-color .15s ease; }
+    .card:hover { transform: translateY(-2px); border-color: rgba(45, 212, 191, .45); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <img src="../profile/rootfs/usr/share/icons/hicolor/scalable/apps/amba.svg" alt="Logo Amba Linux" width="76" height="76">
+    <div>
+      <h1>Rilis Amba Linux 0.1.0</h1>
+      <p class="tagline">Distro Linux ARM64 berbasis Arch Linux ARM dengan KDE Plasma</p>
+    </div>
+  </header>
+
+  <div class="pill-row">
+    <span class="pill">Status <strong>prototipe</strong></span>
+    <span class="pill">Tanggal <strong>2026-11-15</strong></span>
+    <span class="pill">Arsitektur <strong>aarch64</strong></span>
+    <span class="pill">Firmware <strong>UEFI ARM64</strong></span>
+    <span class="pill">Desktop <strong>KDE Plasma</strong></span>
+    <span class="pill">Lisensi <strong>AGPL-3.0-or-later</strong></span>
+  </div>
+
+  <section aria-labelledby="catatan">
+    <h2 id="catatan">Catatan rilis</h2>
+    <p class="section-note">Fondasi awal: profil paket ARM64, branding, builder image GPT/UEFI, skrip uji QEMU, tes offline, dan aplikasi Android pendamping.</p>
+    <p class="muted">Halaman ini dirender tanpa hasil build; ukuran memakai perkiraan dari manifest.</p>
+  </section>
+
+  <section aria-labelledby="unduhan">
+    <h2 id="unduhan">Unduhan</h2>
+    <p class="section-note">4 dari 5 aset sudah tersedia untuk versi ini.</p>
+    <div class="cards">
+      <article class="card card-apk" id="apk">
+        <header>
+          <span class="icon" aria-hidden="true">🤖</span>
+          <div>
+            <h3>Amba untuk Android (APK)</h3>
+            <p class="filename"><code>amba-android-0.1.0.apk</code></p>
+          </div>
+          <span class="badge badge-ready">siap</span>
+        </header>
+        <p class="description">Aplikasi pendamping yang menampilkan versi rilis, status, daftar aset, dan catatan. Dibangun tanpa Gradle/SDK, ditandatangani v2 dengan kunci debug — bukan build Play Store.</p>
+        <dl>
+          <div><dt>Ukuran</dt><dd>± 5 KB</dd></div>
+          <div><dt>Kebutuhan</dt><dd>Android 6.0+ (minSdk 23), semua ABI (tanpa kode native)</dd></div>
+          <div><dt>Jenis</dt><dd>Android</dd></div>
+        </dl>
+
+
+        <ol class="mini-steps">
+          <li><strong>Unduh</strong><span>Klik tombol di bawah; berkas tersimpan di folder Download perangkat.</span></li>
+          <li><strong>Verifikasi</strong><span>Bandingkan SHA-256 dengan <code>SHA256SUMS</code> sebelum dipakai.</span></li>
+          <li><strong>Pakai</strong><span>Pasang di Android 6.0+ (izinkan sumber tidak dikenal), lalu buka aplikasi untuk melihat status rilis.</span></li>
+
+        </ol>
+        <footer><a class="button" href="https://github.com/abri45773-art/Amba-linux/releases/download/v0.1.0/amba-android-0.1.0.apk" rel="noopener">Unduh</a></footer>
+      </article>
+      <article class="card card-zip" id="source">
+        <header>
+          <span class="icon" aria-hidden="true">🗜️</span>
+          <div>
+            <h3>Source code lengkap (ZIP)</h3>
+            <p class="filename"><code>amba-linux-0.1.0-source.zip</code></p>
+          </div>
+          <span class="badge badge-ready">siap</span>
+        </header>
+        <p class="description">Seluruh repositori pada tag rilis: profil paket, overlay rootfs, skrip build/QEMU, tes offline, dokumentasi, serta alat pembangun dan verifikator APK.</p>
+        <dl>
+          <div><dt>Ukuran</dt><dd>± 380 KB (ZIP) / 230 KB (TAR.GZ)</dd></div>
+          <div><dt>Kebutuhan</dt><dd>Zip 3.0+ atau unzip</dd></div>
+          <div><dt>Jenis</dt><dd>Arsip</dd></div>
+        </dl>
+
+
+        <ol class="mini-steps">
+          <li><strong>Unduh</strong><span>Klik tombol di bawah; berkas tersimpan di folder Download perangkat.</span></li>
+          <li><strong>Verifikasi</strong><span>Bandingkan SHA-256 dengan <code>SHA256SUMS</code> sebelum dipakai.</span></li>
+          <li><strong>Pakai</strong><span>Ekstrak lalu jalankan make check; build ulang APK/arsip dengan scripts/make-release.py.</span></li>
+
+        </ol>
+        <footer><a class="button" href="https://github.com/abri45773-art/Amba-linux/releases/download/v0.1.0/amba-linux-0.1.0-source.zip" rel="noopener">Unduh</a></footer>
+      </article>
+      <article class="card card-tarball" id="source-tar">
+        <header>
+          <span class="icon" aria-hidden="true">🗜️</span>
+          <div>
+            <h3>Source code lengkap (TAR.GZ)</h3>
+            <p class="filename"><code>amba-linux-0.1.0-source.tar.gz</code></p>
+          </div>
+          <span class="badge badge-ready">siap</span>
+        </header>
+        <p class="description">Isi yang sama dengan ZIP dalam format tar.gz untuk host Unix, termasuk semua berkas yang dilacak git pada commit rilis.</p>
+        <dl>
+          <div><dt>Ukuran</dt><dd>± 380 KB (ZIP) / 230 KB (TAR.GZ)</dd></div>
+          <div><dt>Kebutuhan</dt><dd>tar + gzip</dd></div>
+          <div><dt>Jenis</dt><dd>Arsip</dd></div>
+        </dl>
+
+
+        <ol class="mini-steps">
+          <li><strong>Unduh</strong><span>Klik tombol di bawah; berkas tersimpan di folder Download perangkat.</span></li>
+          <li><strong>Verifikasi</strong><span>Bandingkan SHA-256 dengan <code>SHA256SUMS</code> sebelum dipakai.</span></li>
+          <li><strong>Pakai</strong><span>Ekstrak dengan tar xzf, lalu ikuti docs/BUILD.md untuk membangun image.</span></li>
+
+        </ol>
+        <footer><a class="button" href="https://github.com/abri45773-art/Amba-linux/releases/download/v0.1.0/amba-linux-0.1.0-source.tar.gz" rel="noopener">Unduh</a></footer>
+      </article>
+      <article class="card card-image" id="image">
+        <header>
+          <span class="icon" aria-hidden="true">💾</span>
+          <div>
+            <h3>Image disk ARM64 UEFI</h3>
+            <p class="filename"><code>amba-linux-0.1.0-aarch64.img</code></p>
+          </div>
+          <span class="badge badge-pending">belum tersedia</span>
+        </header>
+        <p class="description">Image mentah GPT (ESP 512 MiB + ext4) siap ditulis ke USB/NVMe/SD. Dihasilkan oleh scripts/build-image.sh di host Arch Linux ARM aarch64 — belum tersedia sampai build nyata selesai.</p>
+        <dl>
+          <div><dt>Ukuran</dt><dd>± 6–8 GB terkompresi</dd></div>
+          <div><dt>Kebutuhan</dt><dd>Perangkat ARM64 UEFI, minimal 16 GiB media</dd></div>
+          <div><dt>Jenis</dt><dd>Disk image</dd></div>
+        </dl>
+
+
+        <ol class="mini-steps">
+          <li><strong>Unduh</strong><span>Klik tombol di bawah; berkas tersimpan di folder Download perangkat.</span></li>
+          <li><strong>Verifikasi</strong><span>Bandingkan SHA-256 dengan <code>SHA256SUMS</code> sebelum dipakai.</span></li>
+          <li><strong>Pakai</strong><span>Tulis ke media dengan dd atau balenaEtcher, lalu boot perangkat ARM64 UEFI.</span></li>
+          <li><strong>Bangun di host Arch Linux ARM aarch64</strong><code>sudo ./scripts/build-image.sh --rootfs … --rootfs-sha256 … --password-hash-file …</code></li><li><strong>Unggah ke rilis</strong><code>./scripts/publish-release.sh --upload-only --yes</code> lalu render ulang halaman ini</li>
+        </ol>
+        <footer><span class="button button-disabled" aria-disabled="true">Belum tersedia</span></footer>
+      </article>
+      <article class="card card-sha256" id="checksums">
+        <header>
+          <span class="icon" aria-hidden="true">🔐</span>
+          <div>
+            <h3>Checksum SHA-256</h3>
+            <p class="filename"><code>SHA256SUMS</code></p>
+          </div>
+          <span class="badge badge-ready">siap</span>
+        </header>
+        <p class="description">Satu baris sha256sum per aset yang diunggah, dibuat otomatis oleh scripts/make-release.py. Verifikasi dengan sha256sum -c SHA256SUMS.</p>
+        <dl>
+          <div><dt>Ukuran</dt><dd>&lt; 1 KB</dd></div>
+          <div><dt>Kebutuhan</dt><dd>sha256sum (coreutils)</dd></div>
+          <div><dt>Jenis</dt><dd>Verifikasi</dd></div>
+        </dl>
+
+
+        <ol class="mini-steps">
+          <li><strong>Unduh</strong><span>Klik tombol di bawah; berkas tersimpan di folder Download perangkat.</span></li>
+          <li><strong>Verifikasi</strong><span>Bandingkan SHA-256 dengan <code>SHA256SUMS</code> sebelum dipakai.</span></li>
+          <li><strong>Pakai</strong><span>Jalankan sha256sum -c SHA256SUMS di direktori yang sama dengan berkas unduhan.</span></li>
+
+        </ol>
+        <footer><a class="button" href="https://github.com/abri45773-art/Amba-linux/releases/download/v0.1.0/SHA256SUMS" rel="noopener">Unduh</a></footer>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="pasang-apk">
+    <h2 id="pasang-apk">Memasang APK di Android</h2>
+    <ol class="steps">
+      <li><strong>Unduh <code>amba-android-0.1.0.apk</code></strong>
+        Berkas ada di kartu “Android (APK)” di atas, atau di halaman rilis GitHub.</li>
+      <li><strong>Izinkan sumber tidak dikenal</strong>
+        Android akan menampilkan dialog; aktifkan izin hanya untuk aplikasi unduhan/browser yang dipakai.</li>
+      <li><strong>Verifikasi checksum (opsional, disarankan)</strong>
+        <code>sha256sum amba-android-0.1.0.apk</code> di Linux,
+        <code>shasum -a 256 amba-android-0.1.0.apk</code> di macOS, atau
+        <code>certutil -hashfile amba-android-0.1.0.apk SHA256</code> di Windows.</li>
+      <li><strong>Pasang dan buka</strong>
+        Aplikasi menampilkan status rilis, daftar aset, dan catatan; tidak meminta izin jaringan.</li>
+    </ol>
+    <div class="note">
+      APK ditandatangani kunci debug (<code>CN=Amba Linux Release</code>) agar bisa dipasang tanpa
+      Play Store. Play Protect dapat menampilkan peringatan untuk aplikasi di luar toko resmi.
+    </div>
+  </section>
+
+  <section aria-labelledby="apk-detail">
+    <h2 id="apk-detail">Detail APK</h2>
+    <p class="section-note">Metadata yang dibaca langsung dari APK hasil build.</p>
+    <p class="muted">Detail APK muncul setelah build dijalankan.</p>
+  </section>
+
+  <section aria-labelledby="checksum">
+    <h2 id="checksum">Checksum SHA-256</h2>
+    <p class="section-note">Bandingkan dengan <code>SHA256SUMS</code> dari halaman rilis.</p>
+      <p class="muted">Checksum muncul di sini setelah <code>scripts/make-release.py</code> dijalankan,
+        atau unduh <code>SHA256SUMS</code> langsung dari halaman rilis GitHub.</p>
+  </section>
+
+  <section aria-labelledby="belum">
+    <h2 id="belum">Yang belum tersedia</h2>
+    <p class="section-note">Aset ini tidak dibuat oleh pipeline rilis karena membutuhkan host atau perangkat khusus.</p>
+    <ul><li><code>amba-linux-0.1.0-aarch64.img</code> — Image mentah GPT (ESP 512 MiB + ext4) siap ditulis ke USB/NVMe/SD. Dihasilkan oleh scripts/build-image.sh di host Arch Linux ARM aarch64 — belum tersedia sampai build nyata selesai.</li></ul>
+    <div class="note">
+      Image disk ARM64 dibangun di host Arch Linux ARM aarch64 dengan
+      <code>scripts/build-image.sh</code> (lihat <code>docs/BUILD.md</code>), lalu diunggah sebagai
+      <code>amba-linux-0.1.0-aarch64.img</code>. Tanpa build nyata, halaman ini tidak
+      akan menautkannya.
+    </div>
+  </section>
+
+  <section aria-labelledby="bangun">
+    <h2 id="bangun">Bangun ulang dari source</h2>
+    <p class="section-note">Seluruh aset dapat dibuat ulang dari arsip source yang sama.</p>
+    <pre class="codeblock"><code>tar xzf amba-linux-0.1.0-source.tar.gz
+cd amba-linux-0.1.0
+make check                      # tes offline
+python3 scripts/make-release.py --dry-run
+python3 scripts/make-release.py # APK + ZIP + TAR.GZ + SHA256SUMS di dist/</code></pre>
+  </section>
+
+  <footer class="page">
+    <p>
+      <a href="https://github.com/abri45773-art/Amba-linux">Repositori</a>
+      <a href="https://github.com/abri45773-art/Amba-linux/releases">Semua rilis</a>
+      <a href="https://github.com/abri45773-art/Amba-linux/blob/main/docs/BUILD.md">Panduan build</a>
+      <a href="https://github.com/abri45773-art/Amba-linux/blob/main/docs/SECURITY.md">Keamanan</a>
+      <a href="https://github.com/abri45773-art/Amba-linux/issues">Laporkan masalah</a>
+    </p>
+    <p>Halaman ini dibuat otomatis oleh <code>scripts/render-release-page.py</code> dari
+      <code>docs/release.json</code> — jangan disunting manual.
+      Kode Amba Linux: AGPL-3.0-or-later. Proyek ini tidak berafiliasi dengan Arch Linux
+      atau Arch Linux ARM.</p>
+  </footer>
+</div>
+</body>
+</html>

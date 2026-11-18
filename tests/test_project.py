@@ -98,6 +98,28 @@ class ProfileTests(unittest.TestCase):
         self.assertIn("ID_LIKE=arch", text)
         self.assertIn('PRETTY_NAME="Amba Linux"', text)
 
+    def test_release_manifest_is_consistent(self):
+        release = json.loads((ROOT / "docs/release.json").read_text())
+        version = (ROOT / "profile/VERSION").read_text().strip()
+        self.assertEqual(version, release["release"]["version"])
+        self.assertTrue(release["project"]["repo"])
+        self.assertTrue(release["project"]["license"])
+        ids = [asset["id"] for asset in release["assets"]]
+        self.assertEqual(len(ids), len(set(ids)))
+        for asset in release["assets"]:
+            self.assertIn(asset["kind"], {"apk", "zip", "tarball", "image", "sha256"})
+            self.assertTrue(asset["description"].strip())
+            self.assertTrue(asset["usage"].strip())
+
+    def test_release_script_syntax_and_help(self):
+        result = bash("bash -n scripts/publish-release.sh")
+        self.assertEqual(0, result.returncode, result.stderr)
+        result = bash("python3 scripts/make-release.py --dry-run")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("tidak ada berkas ditulis", result.stdout)
+        result = bash("python3 scripts/render-release-page.py --help")
+        self.assertEqual(0, result.returncode, result.stderr)
+
     def test_json_and_svg_assets_parse(self):
         for path in (ROOT / "profile/rootfs").rglob("*.json"):
             with self.subTest(path=path):

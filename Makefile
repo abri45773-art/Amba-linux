@@ -1,4 +1,4 @@
-.PHONY: check test lint dry-run wallpaper image
+.PHONY: check test lint dry-run wallpaper image release release-check page page-preview publish verify-apk clean-release
 
 check: test
 
@@ -8,6 +8,7 @@ test:
 
 lint:
 	shellcheck scripts/*.sh scripts/lib/*.sh profile/rootfs/usr/lib/amba/*
+	python3 -m py_compile scripts/make-release.py scripts/render-release-page.py tools/apkbuild/*.py
 
 dry-run:
 	./scripts/build-image.sh --dry-run
@@ -25,3 +26,36 @@ wallpaper:
 # Example: make image ROOTFS=downloads/rootfs.tar.gz SHA256=... HASH_FILE=/secure/amba.hash
 image:
 	./scripts/build-image.sh --rootfs "$(ROOTFS)" --rootfs-sha256 "$(SHA256)" --password-hash-file "$(HASH_FILE)" $(IMAGE_ARGS)
+
+# Release assets: dist/amba-android-<ver>.apk, dist/*-source.{zip,tar.gz},
+# dist/SHA256SUMS, dist/release-notes.md. The APK key defaults to dist/keys.
+#   make release KEYSTORE=~/.amba-keys FORCE=1
+release:
+	python3 scripts/make-release.py $(if $(KEYSTORE),--keystore "$(KEYSTORE)",) $(if $(FORCE),--force,)
+
+# Re-render the canonical, checksum-independent page committed to the repo.
+page:
+	python3 scripts/render-release-page.py
+
+# Render a local page containing exact checksums without modifying docs/.
+page-preview:
+	python3 scripts/render-release-page.py --manifest dist/release-manifest.json --output dist/releases.html
+
+# Fail if docs/releases.html or the release pipeline drifted from its sources.
+release-check:
+	python3 scripts/render-release-page.py --check
+	python3 -m unittest tests.test_release -v
+
+# Verify one generated APK: make verify-apk APK=dist/amba-android-0.1.0.apk
+verify-apk:
+	@test -n "$(APK)" || { echo "Gunakan: make verify-apk APK=path/to/app.apk" >&2; exit 2; }
+	python3 tools/apkbuild/verify_apk.py "$(APK)"
+
+# Undo generated release assets (keeps dist/keys).
+clean-release:
+	rm -rf dist/amba-android-*.apk dist/*-source.zip dist/*-source.tar.gz \
+	       dist/SHA256SUMS dist/release-manifest.json dist/release-notes.md dist/releases.html
+
+# Publish dist/ as a GitHub Release (needs gh auth). Asks before acting.
+publish:
+	./scripts/publish-release.sh

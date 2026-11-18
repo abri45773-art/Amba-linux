@@ -6,7 +6,7 @@
 - [x] Branding Amba dan hook pacman
 - [x] Builder image GPT/UEFI native aarch64
 - [x] Skrip QEMU ARM64 UEFI
-- [x] Tes offline (44 tes) dan dokumentasi
+- [x] Tes offline dan dokumentasi
 - [x] Tuning runtime: zram, BBR, I/O scheduler, batas journald, `fstrim`
 - [x] Perbaikan bug drop-in SDDM, `/etc/hosts`, dan sinkronisasi systemd-boot
 - [x] CHANGELOG proyek
@@ -24,7 +24,8 @@
 ## 0.3 — distribusi
 
 - [ ] Build terotomasi pada runner ARM64 tepercaya
-- [ ] Manifest versi paket dan checksum rilis
+- [x] Manifest versi paket dan checksum rilis (`docs/release.json`, `SHA256SUMS`)
+- [x] Halaman unduhan HTML dan aplikasi Android pendamping
 - [ ] Installer dengan konfirmasi disk yang lebih aman
 - [ ] Kebijakan pembaruan dan pengumuman keamanan
 

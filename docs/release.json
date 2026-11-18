@@ -1,0 +1,71 @@
+{
+  "project": {
+    "name": "Amba Linux",
+    "tagline": "Distro Linux ARM64 berbasis Arch Linux ARM dengan KDE Plasma",
+    "repo": "abri45773-art/Amba-linux",
+    "branch": "main",
+    "license": "AGPL-3.0-or-later",
+    "architecture": "aarch64",
+    "firmware": "UEFI ARM64",
+    "desktop": "KDE Plasma"
+  },
+  "release": {
+    "version": "0.1.0",
+    "status": "prototipe",
+    "date": "2026-11-15",
+    "notes": "Fondasi awal: profil paket ARM64, branding, builder image GPT/UEFI, skrip uji QEMU, tes offline, dan aplikasi Android pendamping."
+  },
+  "assets": [
+    {
+      "id": "apk",
+      "kind": "apk",
+      "label": "Amba untuk Android (APK)",
+      "file": "amba-android-{version}.apk",
+      "description": "Aplikasi pendamping yang menampilkan versi rilis, status, daftar aset, dan catatan. Dibangun tanpa Gradle/SDK, ditandatangani v2 dengan kunci debug — bukan build Play Store.",
+      "requirements": "Android 6.0+ (minSdk 23), semua ABI (tanpa kode native)",
+      "size_hint": "± 5 KB",
+      "usage": "Pasang di Android 6.0+ (izinkan sumber tidak dikenal), lalu buka aplikasi untuk melihat status rilis."
+    },
+    {
+      "id": "source",
+      "kind": "zip",
+      "label": "Source code lengkap (ZIP)",
+      "file": "amba-linux-{version}-source.zip",
+      "description": "Seluruh repositori pada tag rilis: profil paket, overlay rootfs, skrip build/QEMU, tes offline, dokumentasi, serta alat pembangun dan verifikator APK.",
+      "requirements": "Zip 3.0+ atau unzip",
+      "size_hint": "± 380 KB (ZIP) / 230 KB (TAR.GZ)",
+      "usage": "Ekstrak lalu jalankan make check; build ulang APK/arsip dengan scripts/make-release.py."
+    },
+    {
+      "id": "source-tar",
+      "kind": "tarball",
+      "label": "Source code lengkap (TAR.GZ)",
+      "file": "amba-linux-{version}-source.tar.gz",
+      "description": "Isi yang sama dengan ZIP dalam format tar.gz untuk host Unix, termasuk semua berkas yang dilacak git pada commit rilis.",
+      "requirements": "tar + gzip",
+      "size_hint": "± 380 KB (ZIP) / 230 KB (TAR.GZ)",
+      "usage": "Ekstrak dengan tar xzf, lalu ikuti docs/BUILD.md untuk membangun image."
+    },
+    {
+      "id": "image",
+      "kind": "image",
+      "label": "Image disk ARM64 UEFI",
+      "file": "amba-linux-{version}-aarch64.img",
+      "description": "Image mentah GPT (ESP 512 MiB + ext4) siap ditulis ke USB/NVMe/SD. Dihasilkan oleh scripts/build-image.sh di host Arch Linux ARM aarch64 — belum tersedia sampai build nyata selesai.",
+      "requirements": "Perangkat ARM64 UEFI, minimal 16 GiB media",
+      "size_hint": "± 6–8 GB terkompresi",
+      "pending": true,
+      "usage": "Tulis ke media dengan dd atau balenaEtcher, lalu boot perangkat ARM64 UEFI."
+    },
+    {
+      "id": "checksums",
+      "kind": "sha256",
+      "label": "Checksum SHA-256",
+      "file": "SHA256SUMS",
+      "description": "Satu baris sha256sum per aset yang diunggah, dibuat otomatis oleh scripts/make-release.py. Verifikasi dengan sha256sum -c SHA256SUMS.",
+      "requirements": "sha256sum (coreutils)",
+      "size_hint": "< 1 KB",
+      "usage": "Jalankan sha256sum -c SHA256SUMS di direktori yang sama dengan berkas unduhan."
+    }
+  ]
+}
