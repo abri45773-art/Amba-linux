@@ -4,7 +4,26 @@ Semua perubahan penting proyek ini dicatat di sini. Format mengikuti
 [Keep a Changelog](https://keepachangelog.com/) dan versi mengikuti
 `profile/VERSION`.
 
-## 0.1.0 — perbaikan bug & optimasi (belum dirilis)
+## 0.1.0 — rilis aset, perbaikan bug & optimasi (belum dirilis)
+
+### Rilis dan distribusi
+
+1. **Halaman unduhan** `docs/releases.html` (APK, source ZIP/TAR.GZ, image,
+   checksum) dirender dari `docs/release.json`; `make release-check` menolak
+   halaman yang basi.
+2. **Aplikasi Android pendamping** (~5 KB) dibangun tanpa Gradle/Android SDK:
+   penulis DEX, binary XML, `resources.arsc`, ZIP deterministik, dan penanda
+   tangan APK Signature Scheme v2 semuanya ada di `tools/apkbuild/`.
+3. **Verifikator independen** `tools/apkbuild/verify_apk.py` memeriksa tanda
+   tangan v2 secara kriptografis (openssl) dan menghitung ulang digest konten,
+   sehingga APK rusak gagal di CI, bukan di perangkat.
+4. **`scripts/make-release.py`** menghasilkan APK, arsip source ZIP dan tar.gz
+   (langsung dari blob commit git, metadata waktu commit), `SHA256SUMS`,
+   `release-manifest.json`, dan `release-notes.md`.
+5. **`scripts/publish-release.sh`** memverifikasi checksum lebih dulu, lalu
+   membuat GitHub Release dan mengunggah aset (`--draft`, `--upload-only`).
+6. **Tes offline baru** untuk format DEX, build/verifikasi APK,
+   arsip source, halaman rilis, dan skrip publikasi.
 
 ### Bug yang diperbaiki
 

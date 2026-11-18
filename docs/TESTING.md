@@ -9,7 +9,7 @@ make dry-run
 ./scripts/run-qemu.sh --image contoh.img --dry-run
 ```
 
-Cakupan (44 tes):
+Cakupan:
 
 - Syntax semua skrip Bash, termasuk skrip di `profile/rootfs/usr/lib/amba/`.
 - Validasi username, hash password (termasuk hash asli dari `openssl passwd -6`),
@@ -30,8 +30,14 @@ Cakupan (44 tes):
   PNG dengan dimensi IHDR yang diminta.
 - QEMU default memakai snapshot, mesin ARM64, dan `virtio-rng-pci`.
 - Builder menargetkan file image loopback, bukan disk fisik.
-
-Tes ini **tidak** melakukan instalasi paket, mount, chroot, atau boot.
+- APK dibangun lalu diverifikasi ulang secara independen: struktur ZIP, aturan
+  `resources.arsc` (stored + 4-byte aligned), blok tanda tangan v2, tanda tangan
+  RSA/ECDSA lewat openssl, digest konten v2, isi manifest, dan tabel resource.
+- Mengubah satu byte di `classes.dex` harus membuat verifikasi gagal.
+- `scripts/make-release.py` menghasilkan APK + ZIP + TAR.GZ + `SHA256SUMS` yang
+  konsisten, dan arsip source hanya memuat berkas terlacak git.
+- `docs/releases.html` dirender dari `docs/release.json` dan `make release-check`
+  gagal bila halaman sudah basi.
 
 Tes ini **tidak** melakukan instalasi paket, mount, chroot, atau boot.
 

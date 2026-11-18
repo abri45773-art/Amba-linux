@@ -39,9 +39,13 @@ scripts/
   build-image.sh             Pembuat image disk di host Arch Linux ARM aarch64
   run-qemu.sh                Menjalankan image di QEMU ARM64 UEFI
   render-wallpaper.py        Render wallpaper PNG tanpa dependensi eksternal
+  make-release.py            Buat APK + arsip source + checksum + catatan rilis
+  render-release-page.py     Render docs/releases.html dari docs/release.json
+  publish-release.sh         Unggah aset sebagai GitHub Release
   lib/common.sh              Validasi dan helper boot entry
+tools/apkbuild/              Pembuat APK tanpa Gradle/SDK (DEX, AXML, arsc, tanda tangan v2)
 tests/                       Tes statis/offline
-docs/                        Panduan build, boot, pengujian, keamanan, changelog
+docs/                        Panduan build, boot, pengujian, rilis, keamanan, changelog
 ```
 
 ## Mulai cepat
@@ -87,7 +91,7 @@ Untuk host x86_64, QEMU memakai emulasi TCG sehingga lambat. Untuk pengujian yan
 ## Pemeriksaan tanpa build
 
 ```bash
-make check       # syntax Bash + unit test offline (44 tes)
+make check       # syntax Bash + unit test offline
 make lint        # memerlukan shellcheck
 make dry-run     # menampilkan rencana build tanpa perubahan
 make wallpaper   # render ulang wallpaper 4K (bisa WIDTH=/HEIGHT=/OUTPUT=)
@@ -119,6 +123,30 @@ dan [docs/CHANGELOG.md](docs/CHANGELOG.md).
 - Builder hanya membuat **file image loopback**, tidak mempartisi disk fisik.
 - QEMU secara default memakai `-snapshot`; perubahan disk dibuang kecuali `--persistent`.
 
+## Rilis: APK Android dan source ZIP
+
+Halaman unduhan ada di **[docs/releases.html](docs/releases.html)**, dibuat otomatis
+dari [`docs/release.json`](docs/release.json) supaya versi, nama berkas, dan checksum
+selalu konsisten.
+
+```bash
+make release        # dist/: APK, source .zip/.tar.gz, SHA256SUMS, catatan rilis
+make page           # render ulang docs/releases.html dari manifest kanonis
+make page-preview   # pratinjau lokal dengan ukuran/checksum persis
+make publish        # unggah dist/ sebagai GitHub Release (butuh gh auth)
+```
+
+| Aset | Isi |
+|---|---|
+| `amba-android-<versi>.apk` | Aplikasi pendamping Android ~5 KB (tanpa Gradle/SDK), tanda tangan v2 |
+| `amba-linux-<versi>-source.zip` | Seluruh berkas terlacak git pada commit rilis |
+| `amba-linux-<versi>-source.tar.gz` | Isi sama, format tar.gz |
+| `SHA256SUMS` | Checksum semua aset di atas |
+
+APK bukan image Linux: aplikasi hanya menampilkan status dan catatan rilis. Image
+disk `*.img` tetap harus dibangun di host Arch Linux ARM aarch64. Rincian alur,
+kunci penandatangan, dan cara verifikasi ada di [docs/RELEASE.md](docs/RELEASE.md).
+
 ## Dokumentasi
 
 - [Build image](docs/BUILD.md)
@@ -127,6 +155,8 @@ dan [docs/CHANGELOG.md](docs/CHANGELOG.md).
 - [Keamanan](docs/SECURITY.md)
 - [Arsitektur](docs/ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Rilis: APK dan source ZIP](docs/RELEASE.md)
+- [Halaman unduhan](docs/releases.html)
 - [Changelog](docs/CHANGELOG.md)
 - [Pihak ketiga dan lisensi](THIRD_PARTY.md)
 
