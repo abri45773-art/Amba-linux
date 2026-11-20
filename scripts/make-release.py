@@ -278,7 +278,7 @@ def release_notes(
         lines.append("- APK tidak disertakan pada build rilis ini.")
     if has_iso:
         lines += [
-            "- **ISO prototipe.** `amba-linux-*-.iso` adalah kerangka boot UEFI: katalog El Torito,",
+            "- **ISO prototipe.** `amba-linux-<versi>.iso` adalah kerangka boot UEFI: katalog El Torito,",
             "  stub `BOOTAA64.EFI`/`BOOTX64.EFI`, konfigurasi systemd-boot/GRUB, profil distro, dan",
             "  dokumentasi. ISO ini **belum** memuat kernel, initramfs, rootfs, atau KDE Plasma,",
             "  sehingga belum bisa boot ke desktop. Image sistem lengkap dibangun di host",
