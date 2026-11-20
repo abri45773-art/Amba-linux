@@ -47,7 +47,7 @@ ISO_BUILDER = ROOT / "scripts/build-iso.py"
 DIST = ROOT / "dist"
 
 #: Build outputs and local state that must never ship inside a source archive.
-EXCLUDED_PATHS = {"dist", ".git", "out", "work", "downloads", "__pycache__", ".venv"}
+EXCLUDED_PATHS = {"dist", ".git", "out", "work", "downloads", "releases", "__pycache__", ".venv"}
 
 
 @dataclass(frozen=True)
@@ -260,12 +260,38 @@ def release_notes(
         lines.append(f"| `{record['file']}` | {size} | `{record['sha256'][:16]}…` |")
     lines += [
         "",
+        "Checksum lengkap:",
+        "",
+        "```text",
+        *[f"{record['sha256']}  {record['file']}" for record in records],
+        "```",
+        "",
         "Verifikasi unduhan:",
         "",
         "```bash",
         "sha256sum -c SHA256SUMS",
         "```",
         "",
+    ]
+
+    iso_asset = next((asset for asset in release["assets"] if asset.get("id") == "iso"), None)
+    iso_record = next((record for record in records if record["file"].endswith(".iso")), None)
+    if has_iso and iso_asset and iso_record and iso_asset.get("download_url"):
+        mirror = iso_asset["download_url"].format(
+            repo=release["project"]["repo"],
+            version=release["release"]["version"],
+            filename=iso_record["file"],
+        )
+        lines += [
+            "## Unduhan ISO",
+            "",
+            f"[{iso_record['file']}]({mirror})",
+            "",
+            f"SHA-256: `{iso_record['sha256']}`",
+            "",
+        ]
+
+    lines += [
         "## Catatan",
         "",
     ]

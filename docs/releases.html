@@ -174,7 +174,7 @@
           </div>
           <span class="badge badge-ready">siap</span>
         </header>
-        <p class="description">ISO 9660 + El Torito UEFI (Rock Ridge/Joliet) yang memuat kerangka boot: stub BOOTAA64.EFI/BOOTX64.EFI, konfigurasi systemd-boot dan GRUB, profil distro, skrip build, serta dokumentasi. Belum memuat kernel, initramfs, rootfs, atau KDE Plasma, sehingga belum bisa boot ke desktop — media inspeksi kerangka boot, bukan sistem lengkap.</p>
+        <p class="description">ISO 9660 + El Torito UEFI (Rock Ridge/Joliet) yang memuat kerangka boot: stub BOOTAA64.EFI/BOOTX64.EFI, konfigurasi systemd-boot dan GRUB, profil distro, skrip build, serta dokumentasi. Belum memuat kernel, initramfs, rootfs, atau KDE Plasma, sehingga belum bisa boot ke desktop — media inspeksi kerangka boot, bukan sistem lengkap. Berkas ini dicerminkan di repositori (releases/) karena aset rilis belum diunggah.</p>
         <dl>
           <div><dt>Ukuran</dt><dd>± 1,6 MB</dd></div>
           <div><dt>Kebutuhan</dt><dd>QEMU ARM64 UEFI (virt) atau perangkat ARM64 UEFI; pycdlib untuk membangun ulang</dd></div>
@@ -185,10 +185,10 @@
         <ol class="mini-steps">
           <li><strong>Unduh</strong><span>Klik tombol di bawah; berkas tersimpan di folder Download perangkat.</span></li>
           <li><strong>Verifikasi</strong><span>Bandingkan SHA-256 dengan <code>SHA256SUMS</code> sebelum dipakai.</span></li>
-          <li><strong>Pakai</strong><span>Tulis ke USB dengan dd/balenaEtcher hanya untuk memeriksa kerangka boot, atau buka isinya untuk melihat struktur ISO. Sistem lengkap dibangun di host Arch Linux ARM aarch64 (docs/BUILD.md).</span></li>
+          <li><strong>Pakai</strong><span>Klik Unduh untuk mengambil berkas dari cermin repositori, lalu verifikasi SHA-256. Tulis ke USB dengan dd/balenaEtcher hanya untuk memeriksa kerangka boot. Sistem lengkap dibangun di host Arch Linux ARM aarch64 (docs/BUILD.md).</span></li>
 
         </ol>
-        <footer><a class="button" href="https://github.com/abri45773-art/Amba-linux/releases/download/v0.1.0/amba-linux-0.1.0.iso" rel="noopener">Unduh</a></footer>
+        <footer><a class="button" href="https://github.com/abri45773-art/Amba-linux/raw/v0.1.0/releases/v0.1.0/amba-linux-0.1.0.iso" rel="noopener">Unduh</a></footer>
       </article>
       <article class="card card-zip" id="source">
         <header>

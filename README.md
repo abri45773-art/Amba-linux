@@ -155,6 +155,11 @@ memeriksa struktur boot dan profil distro sebelum build nyata. Image disk `*.img
 tetap harus dibangun di host Arch Linux ARM aarch64. Rincian alur, kunci
 penandatangan, dan cara verifikasi ada di [docs/RELEASE.md](docs/RELEASE.md).
 
+ISO juga dicerminkan di [`releases/v<versi>/`](releases/README.md) di dalam
+repositori agar tautan unduhan di halaman rilis selalu hidup; cermin itu tidak
+ikut arsip source dan boleh dihapus setelah aset ISO berhasil diunggah ke
+GitHub Release.
+
 ## Dokumentasi
 
 - [Build image](docs/BUILD.md)

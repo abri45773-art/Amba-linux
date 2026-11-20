@@ -55,7 +55,10 @@ def load(path: Path) -> dict:
     return json.loads(path.read_text())
 
 
-def download_url(repo: str, version: str, filename: str) -> str:
+def download_url(repo: str, version: str, filename: str, template: str | None = None) -> str:
+    """Release asset URL, or a template such as a repo mirror of the same file."""
+    if template:
+        return template.format(repo=repo, version=version, filename=filename)
     return f"https://github.com/{repo}/releases/download/v{version}/{filename}"
 
 
@@ -73,7 +76,7 @@ def collect_assets(release: dict, built: dict | None) -> list[dict]:
             {
                 **asset,
                 "filename": filename,
-                "url": download_url(repo, version, filename),
+                "url": download_url(repo, version, filename, asset.get("download_url")),
                 "record": record,
                 "pending": pending,
             }

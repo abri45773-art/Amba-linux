@@ -104,9 +104,25 @@ python3 scripts/build-iso.py --dry-run
 
 Membangun ISO membutuhkan `pycdlib` (`python3 -m pip install -r requirements-dev.txt`).
 `make release` ikut membangun ISO dan memasukkannya ke `SHA256SUMS` serta
-manifest rilis; `publish-release.sh` mengunggahnya seperti aset lain. Untuk
-membuat image sistem lengkap, ikuti [BUILD.md](BUILD.md) di host Arch Linux ARM
-aarch64.
+manifest rilis; `publish-release.sh` mengunggahnya seperti aset lain.
+
+Unggahan aset memakai `uploads.github.com`. Bila host itu tidak dapat dijangkau
+dari mesin build, salin ISO ke cermin repositori dan tautkan dari catatan rilis:
+
+```bash
+mkdir -p releases/v0.1.0
+cp dist/amba-linux-0.1.0.iso dist/SHA256SUMS releases/v0.1.0/
+git add releases/v0.1.0 && git commit -m "Cermin ISO 0.1.0"
+```
+
+Berkas di `releases/` tidak ikut arsip source (`EXCLUDED_PATHS`), dan
+`docs/release.json` memakai `download_url` bertemplat
+`/raw/v{version}/releases/v{version}/…` untuk kartu ISO. Setelah aset resmi
+berhasil diunggah, hapus cermin dan hapus `download_url` agar kartu kembali
+memakai URL aset rilis.
+
+Untuk membuat image sistem lengkap, ikuti [BUILD.md](BUILD.md) di host Arch
+Linux ARM aarch64.
 
 ## Aplikasi Android (APK)
 

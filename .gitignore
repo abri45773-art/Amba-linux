@@ -13,3 +13,9 @@
 __pycache__/
 *.pyc
 .venv/
+
+# Cermin berkas rilis kecil (ISO prototipe) supaya tautan unduhan di halaman
+# rilis selalu hidup. Arsip source tidak menyertakannya (lihat
+# scripts/make-release.py EXCLUDED_PATHS dan releases/README.md).
+!releases/
+!releases/**

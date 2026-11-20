@@ -267,7 +267,9 @@ class ReleaseScriptTests(unittest.TestCase):
             tar_path = target / f"amba-linux-{VERSION}-source.tar.gz"
             prefix = f"amba-linux-{VERSION}"
             tracked = {
-                line for line in run(["git", "ls-tree", "-r", "--name-only", "HEAD"]).stdout.splitlines() if line
+                line
+                for line in run(["git", "ls-tree", "-r", "--name-only", "HEAD"]).stdout.splitlines()
+                if line and not line.startswith("releases/")
             }
             with zipfile.ZipFile(zip_path) as archive:
                 zip_names = {name.split("/", 1)[1] for name in archive.namelist()}
