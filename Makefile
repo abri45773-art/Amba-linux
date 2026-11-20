@@ -1,4 +1,4 @@
-.PHONY: check test lint dry-run wallpaper image release release-check page page-preview publish verify-apk clean-release
+.PHONY: check test lint dry-run wallpaper image iso release release-check page page-preview publish verify-apk clean-release
 
 check: test
 
@@ -8,7 +8,7 @@ test:
 
 lint:
 	shellcheck scripts/*.sh scripts/lib/*.sh profile/rootfs/usr/lib/amba/*
-	python3 -m py_compile scripts/make-release.py scripts/render-release-page.py tools/apkbuild/*.py
+	python3 -m py_compile scripts/make-release.py scripts/render-release-page.py scripts/build-iso.py tools/apkbuild/*.py
 
 dry-run:
 	./scripts/build-image.sh --dry-run
@@ -26,6 +26,10 @@ wallpaper:
 # Example: make image ROOTFS=downloads/rootfs.tar.gz SHA256=... HASH_FILE=/secure/amba.hash
 image:
 	./scripts/build-image.sh --rootfs "$(ROOTFS)" --rootfs-sha256 "$(SHA256)" --password-hash-file "$(HASH_FILE)" $(IMAGE_ARGS)
+
+# Build bootable UEFI ISO: make iso [OUTPUT=dist/amba-linux-<ver>.iso] [FORCE=1]
+iso:
+	python3 scripts/build-iso.py $(if $(OUTPUT),--output "$(OUTPUT)",) $(if $(FORCE),--force,)
 
 # Release assets: dist/amba-android-<ver>.apk, dist/*-source.{zip,tar.gz},
 # dist/SHA256SUMS, dist/release-notes.md. The APK key defaults to dist/keys.
@@ -53,7 +57,7 @@ verify-apk:
 
 # Undo generated release assets (keeps dist/keys).
 clean-release:
-	rm -rf dist/amba-android-*.apk dist/*-source.zip dist/*-source.tar.gz \
+	rm -rf dist/amba-android-*.apk dist/*-source.zip dist/*-source.tar.gz dist/*.iso dist/*.iso.sha256 \
 	       dist/SHA256SUMS dist/release-manifest.json dist/release-notes.md dist/releases.html
 
 # Publish dist/ as a GitHub Release (needs gh auth). Asks before acting.
