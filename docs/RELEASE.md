@@ -1,4 +1,4 @@
-# Rilis: APK Android dan source ZIP
+# Rilis: ISO, APK Android, dan source ZIP
 
 Halaman unduhan publik ada di **[releases.html](releases.html)** (dibuat otomatis,
 jangan disunting manual). Dokumen ini menjelaskan isi tiap aset, cara membuatnya,
@@ -8,6 +8,7 @@ dan cara mengunggahnya ke GitHub Releases.
 
 | Berkas | Dibuat oleh | Isi |
 |---|---|---|
+| `amba-linux-<versi>.iso` | `scripts/build-iso.py` | ISO prototipe kerangka boot UEFI: El Torito, stub `BOOTAA64.EFI`/`BOOTX64.EFI`, konfigurasi systemd-boot/GRUB, profil distro, skrip, dokumentasi |
 | `amba-android-<versi>.apk` | `tools/apkbuild/` | Aplikasi pendamping Android (~5 KB), ditandatangani APK Signature Scheme v2 |
 | `amba-linux-<versi>-source.zip` | `scripts/make-release.py` | Semua berkas terlacak git pada commit rilis |
 | `amba-linux-<versi>-source.tar.gz` | `scripts/make-release.py` | Isi sama, format tar.gz |
@@ -23,10 +24,12 @@ sehingga versi, nama berkas, dan tautan tidak mungkin berbeda antar tempat.
 ## Membuat aset
 
 ```bash
-make check                     # tes offline, termasuk build + verifikasi APK
+python3 -m pip install -r requirements-dev.txt   # pycdlib, dibutuhkan ISO
+make check                     # tes offline, termasuk build + verifikasi APK dan ISO
 make release                   # dist/ lengkap; APK ditandatangani kunci di dist/keys
 make release KEYSTORE=~/.amba-keys   # pakai kunci tetap agar checksum stabil
 make release FORCE=1           # timpa aset yang sudah ada
+make release SKIP_ISO=1        # tanpa pycdlib / tanpa ISO
 make page                      # render halaman kanonis tanpa checksum build
 make page-preview              # dist/releases.html dengan checksum build lokal
 make release-check             # gagal bila halaman/manifest sudah basi
@@ -36,6 +39,7 @@ Hasil di `dist/` (diabaikan git):
 
 ```text
 dist/amba-android-0.1.0.apk
+dist/amba-linux-0.1.0.iso
 dist/amba-linux-0.1.0-source.zip
 dist/amba-linux-0.1.0-source.tar.gz
 dist/SHA256SUMS
@@ -49,10 +53,15 @@ Urutan langkah di `scripts/make-release.py`:
 2. APK dibangun (`tools/apkbuild/build_apk.py`) lalu **diverifikasi**
    (`tools/apkbuild/verify_apk.py`): struktur ZIP, aturan `resources.arsc`,
    blok tanda tangan v2, tanda tangan RSA/ECDSA via openssl, dan digest konten v2.
-3. Arsip source membaca blob langsung dari commit git (bukan worktree) dengan
+3. ISO prototipe dibangun (`scripts/build-iso.py`, memakai `pycdlib`) dengan
+   nama `amba-linux-<versi>.iso`. Jam pycdlib dipaku ke `2026-01-01T00:00:00Z`
+   selama build, jadi struktur ISO (volume descriptor, directory record, dan
+   entri Rock Ridge TF) tidak memuat waktu build dan dua build identik
+   menghasilkan berkas identik.
+4. Arsip source membaca blob langsung dari commit git (bukan worktree) dengan
    metadata waktu commit (`SOURCE_DATE_EPOCH`), sehingga perubahan yang belum
    di-commit tidak dapat menyusup dan dua build commit yang sama identik.
-4. `SHA256SUMS`, `release-manifest.json`, dan `release-notes.md` ditulis.
+5. `SHA256SUMS`, `release-manifest.json`, dan `release-notes.md` ditulis.
 
 Berkas yang belum di-commit tidak masuk arsip source; skrip memberi peringatan
 bila ada berkas seperti itu.
@@ -71,6 +80,49 @@ Skrip hanya mengunggah aset yang tercantum dan lolos verifikasi
 tidak melakukan apa pun tanpa `--yes` atau konfirmasi interaktif. Gunakan
 `make page-preview` untuk membuat `dist/releases.html` dengan checksum build;
 halaman kanonis di `docs/` tetap independen dari kunci debug lokal.
+
+## ISO prototipe
+
+`amba-linux-<versi>.iso` adalah **kerangka boot**, bukan sistem operasi lengkap.
+Isinya: katalog boot El Torito (platform EFI), citra FAT12 `boot/efi.img` berisi
+stub UEFI, `EFI/BOOT/BOOTAA64.EFI` dan `BOOTX64.EFI`, konfigurasi
+`loader/loader.conf`, `loader/entries/amba.conf`, `boot/grub/grub.cfg`, profil
+distro di `/amba/` (VERSION, hostname, daftar paket, `release.json`, skrip), dan
+dokumentasi di `/docs/`.
+
+Yang **tidak** ada di ISO: kernel Linux (`/boot/Image`), initramfs, root
+filesystem, KDE Plasma, dan installer. Stub `BOOTAA64.EFI` hanya program PE32+
+minimal yang langsung kembali, sehingga boot berhenti dan firmware melanjutkan
+urutan boot. Entri bootloader menunjuk kernel yang belum ada. Jangan menganggap
+ISO ini bisa dipakai sebagai sistem harian.
+
+```bash
+make iso                       # dist/amba-linux-0.1.0.iso + .iso.sha256
+make iso OUTPUT=dist/uji.iso FORCE=1
+python3 scripts/build-iso.py --dry-run
+```
+
+Membangun ISO membutuhkan `pycdlib` (`python3 -m pip install -r requirements-dev.txt`).
+`make release` ikut membangun ISO dan memasukkannya ke `SHA256SUMS` serta
+manifest rilis; `publish-release.sh` mengunggahnya seperti aset lain.
+
+Unggahan aset memakai `uploads.github.com`. Bila host itu tidak dapat dijangkau
+dari mesin build, salin ISO ke cermin repositori dan tautkan dari catatan rilis:
+
+```bash
+mkdir -p releases/v0.1.0
+cp dist/amba-linux-0.1.0.iso dist/SHA256SUMS releases/v0.1.0/
+git add releases/v0.1.0 && git commit -m "Cermin ISO 0.1.0"
+```
+
+Berkas di `releases/` tidak ikut arsip source (`EXCLUDED_PATHS`), dan
+`docs/release.json` memakai `download_url` bertemplat
+`/raw/v{version}/releases/v{version}/…` untuk kartu ISO. Setelah aset resmi
+berhasil diunggah, hapus cermin dan hapus `download_url` agar kartu kembali
+memakai URL aset rilis.
+
+Untuk membuat image sistem lengkap, ikuti [BUILD.md](BUILD.md) di host Arch
+Linux ARM aarch64.
 
 ## Aplikasi Android (APK)
 
@@ -126,7 +178,8 @@ cd dist && sha256sum amba-linux-0.1.0-aarch64.img >> SHA256SUMS
 ```
 
 Tanpa image nyata, halaman rilis menandai kartu image sebagai
-**belum tersedia** dan tidak memasang tautan unduhan.
+**belum tersedia** dan tidak memasang tautan unduhan. ISO prototipe berbeda:
+aset ini selalu tersedia karena dibangun di mesin mana pun yang punya `pycdlib`.
 
 ## Verifikasi
 

@@ -96,6 +96,23 @@ out/amba-linux-0.1.0-aarch64.img.sha256
 
 Image adalah sistem persisten bergaya installed-system. Ini **bukan** live ISO dengan squashfs/overlay dan bukan installer grafis. Untuk memasang ke media nyata, lihat [BOOT-UEFI.md](BOOT-UEFI.md).
 
+## ISO prototipe kerangka boot
+
+Selain image disk, repositori menyertakan pembuat ISO prototipe yang berjalan di
+host mana pun tanpa root dan tanpa paket Arch Linux ARM:
+
+```bash
+python3 -m pip install -r requirements-dev.txt   # pycdlib
+make iso                                         # dist/amba-linux-0.1.0.iso
+```
+
+ISO (ISO 9660 level 3 + Rock Ridge + Joliet + El Torito UEFI) memuat stub
+`EFI/BOOT/BOOTAA64.EFI` dan `BOOTX64.EFI`, konfigurasi `systemd-boot`/GRUB, profil
+distro di `/amba/`, skrip build, dan dokumentasi. ISO ini **tidak** memuat kernel,
+initramfs, rootfs, atau KDE Plasma sehingga belum bisa boot ke desktop; rincian
+ada di [RELEASE.md](RELEASE.md). Gunakan hanya untuk memeriksa struktur boot
+sebelum membangun image sistem lengkap di host Arch Linux ARM aarch64.
+
 ## Kustomisasi
 
 - Paket: `profile/packages.aarch64.txt`

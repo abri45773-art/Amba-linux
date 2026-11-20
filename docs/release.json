@@ -12,8 +12,8 @@
   "release": {
     "version": "0.1.0",
     "status": "prototipe",
-    "date": "2026-11-15",
-    "notes": "Fondasi awal: profil paket ARM64, branding, builder image GPT/UEFI, skrip uji QEMU, tes offline, dan aplikasi Android pendamping."
+    "date": "2026-11-20",
+    "notes": "Fondasi awal: profil paket ARM64, branding, builder image GPT/UEFI, skrip uji QEMU, tes offline, aplikasi Android pendamping, dan ISO prototipe kerangka boot UEFI."
   },
   "assets": [
     {
@@ -25,6 +25,17 @@
       "requirements": "Android 6.0+ (minSdk 23), semua ABI (tanpa kode native)",
       "size_hint": "± 5 KB",
       "usage": "Pasang di Android 6.0+ (izinkan sumber tidak dikenal), lalu buka aplikasi untuk melihat status rilis."
+    },
+    {
+      "id": "iso",
+      "kind": "iso",
+      "label": "ISO prototipe UEFI ARM64",
+      "file": "amba-linux-{version}.iso",
+      "description": "ISO 9660 + El Torito UEFI (Rock Ridge/Joliet) yang memuat kerangka boot: stub BOOTAA64.EFI/BOOTX64.EFI, konfigurasi systemd-boot dan GRUB, profil distro, skrip build, serta dokumentasi. Belum memuat kernel, initramfs, rootfs, atau KDE Plasma, sehingga belum bisa boot ke desktop — media inspeksi kerangka boot, bukan sistem lengkap. Berkas ini dicerminkan di repositori (releases/) karena aset rilis belum diunggah.",
+      "requirements": "QEMU ARM64 UEFI (virt) atau perangkat ARM64 UEFI; pycdlib untuk membangun ulang",
+      "size_hint": "± 1,6 MB",
+      "usage": "Klik Unduh untuk mengambil berkas dari cermin repositori, lalu verifikasi SHA-256. Tulis ke USB dengan dd/balenaEtcher hanya untuk memeriksa kerangka boot. Sistem lengkap dibangun di host Arch Linux ARM aarch64 (docs/BUILD.md).",
+      "download_url": "https://github.com/{repo}/raw/v{version}/releases/v{version}/amba-linux-{version}.iso"
     },
     {
       "id": "source",

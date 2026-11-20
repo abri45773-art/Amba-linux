@@ -31,11 +31,14 @@ image:
 iso:
 	python3 scripts/build-iso.py $(if $(OUTPUT),--output "$(OUTPUT)",) $(if $(FORCE),--force,)
 
-# Release assets: dist/amba-android-<ver>.apk, dist/*-source.{zip,tar.gz},
-# dist/SHA256SUMS, dist/release-notes.md. The APK key defaults to dist/keys.
+# Release assets: dist/amba-android-<ver>.apk, dist/amba-linux-<ver>.iso,
+# dist/*-source.{zip,tar.gz}, dist/SHA256SUMS, dist/release-notes.md.
+# The APK key defaults to dist/keys; the ISO needs pycdlib
+# (pip install -r requirements-dev.txt).
 #   make release KEYSTORE=~/.amba-keys FORCE=1
+#   make release SKIP_ISO=1              # tanpa pycdlib
 release:
-	python3 scripts/make-release.py $(if $(KEYSTORE),--keystore "$(KEYSTORE)",) $(if $(FORCE),--force,)
+	python3 scripts/make-release.py $(if $(KEYSTORE),--keystore "$(KEYSTORE)",) $(if $(SKIP_ISO),--skip-iso,) $(if $(FORCE),--force,)
 
 # Re-render the canonical, checksum-independent page committed to the repo.
 page:

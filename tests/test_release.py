@@ -187,7 +187,7 @@ class ReleaseManifestTests(unittest.TestCase):
 
     def test_manifest_describes_every_release_asset(self):
         kinds = {asset["kind"] for asset in RELEASE["assets"]}
-        for expected in {"apk", "zip", "tarball", "image", "sha256"}:
+        for expected in {"apk", "iso", "zip", "tarball", "image", "sha256"}:
             self.assertIn(expected, kinds)
         names = [asset["file"] for asset in RELEASE["assets"]]
         self.assertEqual(len(names), len(set(names)))
@@ -212,6 +212,7 @@ class ReleaseScriptTests(unittest.TestCase):
             self.assertEqual(0, result.returncode, result.stderr)
             self.assertIn("tidak ada berkas ditulis", result.stdout)
             self.assertIn(f"amba-android-{VERSION}.apk", result.stdout)
+            self.assertIn(f"amba-linux-{VERSION}.iso", result.stdout)
             self.assertFalse(target.exists())
 
     def test_full_release_build_is_self_consistent(self):
@@ -230,14 +231,14 @@ class ReleaseScriptTests(unittest.TestCase):
             self.assertEqual(0, result.returncode, result.stderr)
 
             sums = (target / "SHA256SUMS").read_text().splitlines()
-            self.assertEqual(3, len(sums), sums)
+            self.assertEqual(4, len(sums), sums)
             for line in sums:
                 digest, name = line.split("  ")
                 self.assertEqual(digest, hashlib.sha256((target / name).read_bytes()).hexdigest())
 
             manifest = json.loads((target / "release-manifest.json").read_text())
             self.assertEqual(VERSION, manifest["release"]["version"])
-            self.assertEqual(3, len(manifest["assets"]))
+            self.assertEqual(4, len(manifest["assets"]))
             self.assertTrue(manifest["release"]["commit"])
             self.assertEqual(RELEASE["project"]["repo"], manifest["project"]["repo"])
 
@@ -246,12 +247,29 @@ class ReleaseScriptTests(unittest.TestCase):
             info = verify_apk.verify_apk(target / apk_name)
             self.assertEqual(manifest["apk"]["sha256"], info["sha256"])
 
+            # The ISO is a real ISO 9660 image with an El Torito UEFI catalog.
+            iso_path = target / f"amba-linux-{VERSION}.iso"
+            self.assertGreater(iso_path.stat().st_size, 1_000_000)
+            self.assertEqual(manifest["iso"]["sha256"], hashlib.sha256(iso_path.read_bytes()).hexdigest())
+            import pycdlib
+
+            iso = pycdlib.PyCdlib()
+            iso.open(str(iso_path))
+            try:
+                self.assertIsNotNone(iso.eltorito_boot_catalog)
+                for iso_file in ("/EFI/BOOT/BOOTAA64.EFI;1", "/AMBA/VERSION.TXT;1", "/AMBA/RELEASE.JSO;1"):
+                    self.assertIsNotNone(iso.get_record(iso_path=iso_file), f"{iso_file} harus ada di ISO")
+            finally:
+                iso.close()
+
             # Source archives carry the same file list as the git checkout.
             zip_path = target / f"amba-linux-{VERSION}-source.zip"
             tar_path = target / f"amba-linux-{VERSION}-source.tar.gz"
             prefix = f"amba-linux-{VERSION}"
             tracked = {
-                line for line in run(["git", "ls-tree", "-r", "--name-only", "HEAD"]).stdout.splitlines() if line
+                line
+                for line in run(["git", "ls-tree", "-r", "--name-only", "HEAD"]).stdout.splitlines()
+                if line and not line.startswith("releases/")
             }
             with zipfile.ZipFile(zip_path) as archive:
                 zip_names = {name.split("/", 1)[1] for name in archive.namelist()}

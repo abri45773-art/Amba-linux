@@ -5,11 +5,17 @@
 Outputs (all deterministic, all checksummed):
 
     dist/amba-android-<version>.apk              signed companion app
+    dist/amba-linux-<version>.iso                prototype UEFI boot-framework ISO
     dist/amba-linux-<version>-source.zip         tracked files at this commit
     dist/amba-linux-<version>-source.tar.gz      same tree, Unix format
     dist/SHA256SUMS                              sha256sum -c compatible
     dist/release-manifest.json                   machine-readable asset list
     dist/release-notes.md                        text for the GitHub Release
+
+The ISO is a boot-framework prototype built by scripts/build-iso.py: it carries
+the UEFI boot chain, loader configuration and distro profile, but no kernel,
+initramfs or root filesystem. Building it needs pycdlib (`pip install -r
+requirements-dev.txt`); pass --skip-iso to omit it.
 
 The disk image is never built here: it requires a native Arch Linux ARM
 aarch64 host, so the script only records it as pending.
@@ -17,7 +23,7 @@ aarch64 host, so the script only records it as pending.
 Examples:
     python3 scripts/make-release.py --dry-run             # print the plan
     python3 scripts/make-release.py --keystore ~/.amba-keys
-    python3 scripts/make-release.py --skip-apk
+    python3 scripts/make-release.py --skip-apk --skip-iso
 """
 from __future__ import annotations
 
@@ -37,10 +43,11 @@ VERSION_FILE = ROOT / "profile/VERSION"
 MANIFEST_FILE = ROOT / "docs/release.json"
 APK_BUILDER = ROOT / "tools/apkbuild/build_apk.py"
 APK_VERIFIER = ROOT / "tools/apkbuild/verify_apk.py"
+ISO_BUILDER = ROOT / "scripts/build-iso.py"
 DIST = ROOT / "dist"
 
 #: Build outputs and local state that must never ship inside a source archive.
-EXCLUDED_PATHS = {"dist", ".git", "out", "work", "downloads", "__pycache__", ".venv"}
+EXCLUDED_PATHS = {"dist", ".git", "out", "work", "downloads", "releases", "__pycache__", ".venv"}
 
 
 @dataclass(frozen=True)
@@ -206,8 +213,43 @@ def build_apk(target: Path, keystore: Path, manifest: Path) -> dict:
     return info
 
 
-def release_notes(release: dict, records: list[dict], commit: str, epoch: int, has_apk: bool) -> str:
+def build_iso(target: Path, release_version: str) -> dict:
+    """Build the prototype UEFI ISO with scripts/build-iso.py (needs pycdlib)."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("amba_build_iso", ISO_BUILDER)
+    if spec is None or spec.loader is None:
+        raise SystemExit(f"tidak dapat memuat {ISO_BUILDER}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    try:
+        return module.generate_iso(target, version=release_version, force=True)
+    except ModuleNotFoundError as error:
+        raise SystemExit(
+            f"build ISO membutuhkan modul {error.name} "
+            "(pip install -r requirements-dev.txt) atau jalankan dengan --skip-iso"
+        ) from error
+
+
+def release_notes(
+    release: dict,
+    records: list[dict],
+    commit: str,
+    epoch: int,
+    has_apk: bool,
+    has_iso: bool = False,
+) -> str:
     timestamp = dt.datetime.fromtimestamp(epoch, tz=dt.timezone.utc).isoformat().replace("+00:00", "Z")
+    iso_asset = next((asset for asset in release["assets"] if asset.get("id") == "iso"), None)
+    iso_record = next((record for record in records if record["file"].endswith(".iso")), None)
+    mirror = None
+    if has_iso and iso_asset and iso_record and iso_asset.get("download_url"):
+        mirror = iso_asset["download_url"].format(
+            repo=release["project"]["repo"],
+            version=release["release"]["version"],
+            filename=iso_record["file"],
+        )
+
     lines = [
         f"# Amba Linux {release['release']['version']} — {release['release']['status']}",
         "",
@@ -218,6 +260,15 @@ def release_notes(release: dict, records: list[dict], commit: str, epoch: int, h
         f"- Lisensi: {release['project']['license']}",
         f"- Target: {release['project']['architecture']} / {release['project']['firmware']} / {release['project']['desktop']}",
         "",
+    ]
+    if mirror and iso_record:
+        lines += [
+            f"**⬇️ Unduh ISO prototipe: [{iso_record['file']}]({mirror})**",
+            "",
+            f"SHA-256 ISO: `{iso_record['sha256']}`",
+            "",
+        ]
+    lines += [
         "## Aset",
         "",
         "| Berkas | Ukuran | SHA-256 |",
@@ -228,12 +279,21 @@ def release_notes(release: dict, records: list[dict], commit: str, epoch: int, h
         lines.append(f"| `{record['file']}` | {size} | `{record['sha256'][:16]}…` |")
     lines += [
         "",
+        "Checksum lengkap:",
+        "",
+        "```text",
+        *[f"{record['sha256']}  {record['file']}" for record in records],
+        "```",
+        "",
         "Verifikasi unduhan:",
         "",
         "```bash",
         "sha256sum -c SHA256SUMS",
         "```",
         "",
+    ]
+
+    lines += [
         "## Catatan",
         "",
     ]
@@ -244,6 +304,16 @@ def release_notes(release: dict, records: list[dict], commit: str, epoch: int, h
         ]
     else:
         lines.append("- APK tidak disertakan pada build rilis ini.")
+    if has_iso:
+        lines += [
+            "- **ISO prototipe.** `amba-linux-<versi>.iso` adalah kerangka boot UEFI: katalog El Torito,",
+            "  stub `BOOTAA64.EFI`/`BOOTX64.EFI`, konfigurasi systemd-boot/GRUB, profil distro, dan",
+            "  dokumentasi. ISO ini **belum** memuat kernel, initramfs, rootfs, atau KDE Plasma,",
+            "  sehingga belum bisa boot ke desktop. Image sistem lengkap dibangun di host",
+            "  Arch Linux ARM aarch64 dengan `scripts/build-image.sh`.",
+        ]
+    else:
+        lines.append("- ISO tidak disertakan pada build rilis ini (`--skip-iso`).")
     lines += [
         "- Image disk `amba-linux-*-aarch64.img` belum tersedia: image harus dibangun di host",
         "  Arch Linux ARM aarch64 memakai `scripts/build-image.sh`, lihat `docs/BUILD.md`.",
@@ -260,14 +330,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--keystore", type=Path, default=None, help="direktori kunci APK (debug.key/debug.crt)")
     parser.add_argument("--manifest", type=Path, default=MANIFEST_FILE, help="manifest rilis (default: docs/release.json)")
     parser.add_argument("--skip-apk", action="store_true")
+    parser.add_argument("--skip-iso", action="store_true", help="lewati ISO prototipe (butuh pycdlib)")
     parser.add_argument("--skip-source", action="store_true")
     parser.add_argument("--epoch", type=int, default=None, help="timestamp SOURCE_DATE_EPOCH untuk reproduksibilitas")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--force", action="store_true", help="timpa aset yang sudah ada")
     args = parser.parse_args(argv)
 
-    if args.skip_apk and args.skip_source:
-        parser.error("--skip-apk dan --skip-source tidak boleh dipakai bersamaan")
+    if args.skip_apk and args.skip_iso and args.skip_source:
+        parser.error("minimal satu aset harus dibangun (APK, ISO, atau source)")
 
     release = load_release(args.manifest)
     ensure_manifest_version(release, args.manifest)
@@ -292,6 +363,8 @@ def main(argv: list[str] | None = None) -> int:
     planned = []
     if not args.skip_apk:
         planned.append(out_dir / f"amba-android-{version_}.apk")
+    if not args.skip_iso:
+        planned.append(out_dir / f"{prefix}.iso")
     if not args.skip_source:
         planned.append(out_dir / f"{prefix}-source.zip")
         planned.append(out_dir / f"{prefix}-source.tar.gz")
@@ -307,6 +380,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  - {path.relative_to(ROOT) if path.is_relative_to(ROOT) else path}")
         if not args.skip_apk:
             print("  APK       : dibangun dengan tools/apkbuild, lalu diverifikasi (v2)")
+        if not args.skip_iso:
+            print("  ISO       : kerangka boot UEFI prototipe (tanpa kernel/rootfs)")
         return 0
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -323,6 +398,12 @@ def main(argv: list[str] | None = None) -> int:
         apk_info = build_apk(apk_path, keystore, args.manifest)
         records.append(file_record(apk_path))
         generated["apk"] = apk_info
+
+    if not args.skip_iso:
+        iso_path = out_dir / f"{prefix}.iso"
+        iso_info = build_iso(iso_path, version_)
+        records.append(file_record(iso_path))
+        generated["iso"] = {key: iso_info[key] for key in ("file", "size", "sha256", "volume_id", "version")}
 
     if not args.skip_source:
         zip_path = out_dir / f"{prefix}-source.zip"
@@ -343,11 +424,19 @@ def main(argv: list[str] | None = None) -> int:
             asset for asset in release["assets"] if asset.get("pending")
         ],
         "apk": generated.get("apk"),
+        "iso": generated.get("iso"),
         "build_tool": "scripts/make-release.py",
     }
     (out_dir / "release-manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
     (out_dir / "release-notes.md").write_text(
-        release_notes(release, records, short, epoch, has_apk=not args.skip_apk)
+        release_notes(
+            release,
+            records,
+            short,
+            epoch,
+            has_apk=not args.skip_apk,
+            has_iso=not args.skip_iso,
+        )
     )
 
     print(f"Aset rilis Amba Linux {version_} ditulis ke {out_dir}:")

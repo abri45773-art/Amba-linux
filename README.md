@@ -2,9 +2,11 @@
 
 **Amba Linux** adalah proyek distro Linux berbasis **Arch Linux ARM** untuk **ARM64 (aarch64) UEFI**, dengan desktop **KDE Plasma**.
 
-> Status: **fondasi awal / prototipe siap-build**, bukan rilis ISO yang sudah diuji boot.
+> Status: **fondasi awal / prototipe siap-build**.
 > Repositori ini berisi konfigurasi, branding, skrip pembuat image, skrip uji QEMU, dan tes offline.
-> Image belum dibangun di lingkungan kerja ini karena build memerlukan host Arch Linux ARM aarch64 dan akses repositori paket Arch Linux ARM.
+> Rilis GitHub menyediakan **ISO prototipe kerangka boot UEFI**, APK pendamping, dan source code.
+> ISO tersebut belum memuat kernel, initramfs, rootfs, atau KDE Plasma sehingga belum bisa boot ke desktop;
+> image sistem lengkap memerlukan host Arch Linux ARM aarch64 dan akses repositori paket Arch Linux ARM.
 
 ## Pilihan teknis
 
@@ -39,7 +41,8 @@ scripts/
   build-image.sh             Pembuat image disk di host Arch Linux ARM aarch64
   run-qemu.sh                Menjalankan image di QEMU ARM64 UEFI
   render-wallpaper.py        Render wallpaper PNG tanpa dependensi eksternal
-  make-release.py            Buat APK + arsip source + checksum + catatan rilis
+  build-iso.py               Bangun ISO prototipe kerangka boot UEFI (butuh pycdlib)
+  make-release.py            Buat APK + ISO + arsip source + checksum + catatan rilis
   render-release-page.py     Render docs/releases.html dari docs/release.json
   publish-release.sh         Unggah aset sebagai GitHub Release
   lib/common.sh              Validasi dan helper boot entry
@@ -123,14 +126,16 @@ dan [docs/CHANGELOG.md](docs/CHANGELOG.md).
 - Builder hanya membuat **file image loopback**, tidak mempartisi disk fisik.
 - QEMU secara default memakai `-snapshot`; perubahan disk dibuang kecuali `--persistent`.
 
-## Rilis: APK Android dan source ZIP
+## Rilis: ISO prototipe, APK Android, dan source ZIP
 
 Halaman unduhan ada di **[docs/releases.html](docs/releases.html)**, dibuat otomatis
 dari [`docs/release.json`](docs/release.json) supaya versi, nama berkas, dan checksum
 selalu konsisten.
 
 ```bash
-make release        # dist/: APK, source .zip/.tar.gz, SHA256SUMS, catatan rilis
+python3 -m pip install -r requirements-dev.txt   # pycdlib untuk ISO
+make release        # dist/: APK, ISO, source .zip/.tar.gz, SHA256SUMS, catatan rilis
+make iso            # hanya ISO: dist/amba-linux-<versi>.iso
 make page           # render ulang docs/releases.html dari manifest kanonis
 make page-preview   # pratinjau lokal dengan ukuran/checksum persis
 make publish        # unggah dist/ sebagai GitHub Release (butuh gh auth)
@@ -138,14 +143,22 @@ make publish        # unggah dist/ sebagai GitHub Release (butuh gh auth)
 
 | Aset | Isi |
 |---|---|
+| `amba-linux-<versi>.iso` | **ISO prototipe**: kerangka boot UEFI (El Torito, stub `BOOTAA64.EFI`, konfigurasi systemd-boot/GRUB), profil distro, skrip, dan dokumentasi |
 | `amba-android-<versi>.apk` | Aplikasi pendamping Android ~5 KB (tanpa Gradle/SDK), tanda tangan v2 |
 | `amba-linux-<versi>-source.zip` | Seluruh berkas terlacak git pada commit rilis |
 | `amba-linux-<versi>-source.tar.gz` | Isi sama, format tar.gz |
 | `SHA256SUMS` | Checksum semua aset di atas |
 
-APK bukan image Linux: aplikasi hanya menampilkan status dan catatan rilis. Image
-disk `*.img` tetap harus dibangun di host Arch Linux ARM aarch64. Rincian alur,
-kunci penandatangan, dan cara verifikasi ada di [docs/RELEASE.md](docs/RELEASE.md).
+ISO bukan sistem lengkap: tidak ada kernel, initramfs, root filesystem, atau KDE
+Plasma di dalamnya, jadi boot akan berhenti dan belum ada desktop. ISO ini untuk
+memeriksa struktur boot dan profil distro sebelum build nyata. Image disk `*.img`
+tetap harus dibangun di host Arch Linux ARM aarch64. Rincian alur, kunci
+penandatangan, dan cara verifikasi ada di [docs/RELEASE.md](docs/RELEASE.md).
+
+ISO juga dicerminkan di [`releases/v<versi>/`](releases/README.md) di dalam
+repositori agar tautan unduhan di halaman rilis selalu hidup; cermin itu tidak
+ikut arsip source dan boleh dihapus setelah aset ISO berhasil diunggah ke
+GitHub Release.
 
 ## Dokumentasi
 
@@ -155,7 +168,7 @@ kunci penandatangan, dan cara verifikasi ada di [docs/RELEASE.md](docs/RELEASE.m
 - [Keamanan](docs/SECURITY.md)
 - [Arsitektur](docs/ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)
-- [Rilis: APK dan source ZIP](docs/RELEASE.md)
+- [Rilis: ISO, APK, dan source ZIP](docs/RELEASE.md)
 - [Halaman unduhan](docs/releases.html)
 - [Changelog](docs/CHANGELOG.md)
 - [Pihak ketiga dan lisensi](THIRD_PARTY.md)

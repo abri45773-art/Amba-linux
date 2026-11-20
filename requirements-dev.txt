@@ -1,0 +1,4 @@
+# Dependensi pengembangan/uji di luar Python standard library.
+# Hanya dibutuhkan oleh scripts/build-iso.py (ISO prototipe) dan tests/test_iso.py.
+#   python3 -m pip install -r requirements-dev.txt
+pycdlib>=1.14,<2

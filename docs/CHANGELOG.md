@@ -22,8 +22,14 @@ Semua perubahan penting proyek ini dicatat di sini. Format mengikuti
    `release-manifest.json`, dan `release-notes.md`.
 5. **`scripts/publish-release.sh`** memverifikasi checksum lebih dulu, lalu
    membuat GitHub Release dan mengunggah aset (`--draft`, `--upload-only`).
-6. **Tes offline baru** untuk format DEX, build/verifikasi APK,
-   arsip source, halaman rilis, dan skrip publikasi.
+6. **ISO prototipe kerangka boot** (ISO 9660 + El Torito UEFI, Rock Ridge,
+   Joliet) lewat `scripts/build-iso.py` dan `make iso`. ISO memuat rantai boot,
+   konfigurasi systemd-boot/GRUB, profil distro, skrip, dan dokumentasi — tanpa
+   kernel, initramfs, rootfs, atau desktop. `make release` ikut membangun ISO,
+   memasukkannya ke `SHA256SUMS`/manifest, dan `docs/releases.html` menampilkan
+   kartu unduhannya.
+7. **Tes offline baru** untuk format DEX, build/verifikasi APK, ISO, arsip
+   source, halaman rilis, dan skrip publikasi.
 
 ### Bug yang diperbaiki
 
