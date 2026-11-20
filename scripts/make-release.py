@@ -240,6 +240,16 @@ def release_notes(
     has_iso: bool = False,
 ) -> str:
     timestamp = dt.datetime.fromtimestamp(epoch, tz=dt.timezone.utc).isoformat().replace("+00:00", "Z")
+    iso_asset = next((asset for asset in release["assets"] if asset.get("id") == "iso"), None)
+    iso_record = next((record for record in records if record["file"].endswith(".iso")), None)
+    mirror = None
+    if has_iso and iso_asset and iso_record and iso_asset.get("download_url"):
+        mirror = iso_asset["download_url"].format(
+            repo=release["project"]["repo"],
+            version=release["release"]["version"],
+            filename=iso_record["file"],
+        )
+
     lines = [
         f"# Amba Linux {release['release']['version']} — {release['release']['status']}",
         "",
@@ -250,6 +260,15 @@ def release_notes(
         f"- Lisensi: {release['project']['license']}",
         f"- Target: {release['project']['architecture']} / {release['project']['firmware']} / {release['project']['desktop']}",
         "",
+    ]
+    if mirror and iso_record:
+        lines += [
+            f"**⬇️ Unduh ISO prototipe: [{iso_record['file']}]({mirror})**",
+            "",
+            f"SHA-256 ISO: `{iso_record['sha256']}`",
+            "",
+        ]
+    lines += [
         "## Aset",
         "",
         "| Berkas | Ukuran | SHA-256 |",
@@ -273,23 +292,6 @@ def release_notes(
         "```",
         "",
     ]
-
-    iso_asset = next((asset for asset in release["assets"] if asset.get("id") == "iso"), None)
-    iso_record = next((record for record in records if record["file"].endswith(".iso")), None)
-    if has_iso and iso_asset and iso_record and iso_asset.get("download_url"):
-        mirror = iso_asset["download_url"].format(
-            repo=release["project"]["repo"],
-            version=release["release"]["version"],
-            filename=iso_record["file"],
-        )
-        lines += [
-            "## Unduhan ISO",
-            "",
-            f"[{iso_record['file']}]({mirror})",
-            "",
-            f"SHA-256: `{iso_record['sha256']}`",
-            "",
-        ]
 
     lines += [
         "## Catatan",
