@@ -120,6 +120,16 @@ class IsoBuildTests(unittest.TestCase):
 
             iso.close()
 
+    def test_iso_is_reproducible_with_fixed_timestamp(self):
+        """Two builds must match byte-for-byte; pycdlib's clock is pinned."""
+        with tempfile.TemporaryDirectory() as tmp:
+            first = generate_iso(Path(tmp) / "a.iso", force=True)
+            second = generate_iso(Path(tmp) / "b.iso", force=True)
+            self.assertEqual(first["sha256"], second["sha256"])
+            raw = (Path(tmp) / "a.iso").read_bytes()
+            self.assertEqual(b"2026010100000000\x00", raw[16 * 2048 + 813 : 16 * 2048 + 830])
+            self.assertEqual(bytes([0x7E, 1, 1, 0, 0, 0, 0]), raw[29 * 2048 + 18 : 29 * 2048 + 25])
+
     def test_overwrite_protection(self):
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "existing.iso"

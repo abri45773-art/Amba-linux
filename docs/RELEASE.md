@@ -54,7 +54,10 @@ Urutan langkah di `scripts/make-release.py`:
    (`tools/apkbuild/verify_apk.py`): struktur ZIP, aturan `resources.arsc`,
    blok tanda tangan v2, tanda tangan RSA/ECDSA via openssl, dan digest konten v2.
 3. ISO prototipe dibangun (`scripts/build-iso.py`, memakai `pycdlib`) dengan
-   nama `amba-linux-<versi>.iso`. Isinya deterministik untuk input yang sama.
+   nama `amba-linux-<versi>.iso`. Jam pycdlib dipaku ke `2026-01-01T00:00:00Z`
+   selama build, jadi struktur ISO (volume descriptor, directory record, dan
+   entri Rock Ridge TF) tidak memuat waktu build dan dua build identik
+   menghasilkan berkas identik.
 4. Arsip source membaca blob langsung dari commit git (bukan worktree) dengan
    metadata waktu commit (`SOURCE_DATE_EPOCH`), sehingga perubahan yang belum
    di-commit tidak dapat menyusup dan dua build commit yang sama identik.

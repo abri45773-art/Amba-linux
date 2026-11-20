@@ -32,10 +32,13 @@ import hashlib
 import io
 import struct
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION_FILE = ROOT / "profile/VERSION"
+#: Fixed timestamp used for every ISO structure (2026-01-01T00:00:00Z).
+ISO_EPOCH = 1767225600
 DIST_DIR = ROOT / "dist"
 OUT_DIR = ROOT / "out"
 
@@ -177,8 +180,61 @@ def make_fat12_img(files: dict[str, bytes]) -> bytes:
     return bytes(img)
 
 
-def generate_iso(output_path: Path, version: str | None = None, force: bool = False) -> dict:
-    """Build the Amba Linux bootable ISO and write it to *output_path*."""
+class _FixedClock:
+    """Stand-in for the ``time`` module that always reports *epoch*."""
+
+    def __init__(self, epoch: int) -> None:
+        self.epoch = epoch
+
+    def time(self) -> float:
+        return float(self.epoch)
+
+    def __getattr__(self, name: str):
+        import time
+
+        return getattr(time, name)
+
+
+@contextmanager
+def fixed_timestamp(epoch: int):
+    """Pin pycdlib's clock so identical inputs give byte-identical media.
+
+    pycdlib stamps volume descriptors, directory records and Rock Ridge TF
+    entries with ``time.time()``. Swapping that module attribute for the
+    duration of the build makes the ISO reproducible without touching global
+    state outside pycdlib.
+    """
+    import pycdlib.headervd
+    import pycdlib.pycdlib
+
+    modules = (pycdlib.headervd, pycdlib.pycdlib)
+    clock = _FixedClock(epoch)
+    original = [(module, module.time) for module in modules]
+    try:
+        for module in modules:
+            module.time = clock
+        yield
+    finally:
+        for module, value in original:
+            module.time = value
+
+
+def generate_iso(
+    output_path: Path,
+    version: str | None = None,
+    force: bool = False,
+    epoch: int = ISO_EPOCH,
+) -> dict:
+    """Build the prototype ISO and write it to *output_path*."""
+    with fixed_timestamp(epoch):
+        return _build_iso(output_path, version=version, force=force)
+
+
+def _build_iso(
+    output_path: Path,
+    version: str | None = None,
+    force: bool = False,
+) -> dict:
     import pycdlib
 
     ver = version or get_version()
@@ -262,7 +318,8 @@ def generate_iso(output_path: Path, version: str | None = None, force: bool = Fa
     ).encode("utf-8")
 
 
-    # 5. Initialize ISO with Joliet and Rock Ridge
+    # 5. Initialize ISO with Joliet and Rock Ridge. Everything below runs under
+    # a fixed clock so repeated builds are byte-identical.
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=3, joliet=3, rock_ridge="1.09", vol_ident=vol_id)
 
