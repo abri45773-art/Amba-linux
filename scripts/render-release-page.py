@@ -28,6 +28,7 @@ KIND_LABEL = {
     "apk": "Android",
     "zip": "Arsip",
     "tarball": "Arsip",
+    "iso": "ISO",
     "image": "Disk image",
     "sha256": "Verifikasi",
 }
@@ -36,6 +37,7 @@ KIND_ICON = {
     "apk": "🤖",
     "zip": "🗜️",
     "tarball": "🗜️",
+    "iso": "💿",
     "image": "💾",
     "sha256": "🔐",
 }
@@ -199,8 +201,8 @@ def render(release: dict, built: dict | None) -> str:
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rilis {html.escape(project["name"])} {html.escape(version)} — Unduh APK &amp; Source</title>
-<meta name="description" content="{html.escape(project["tagline"])} — unduh APK pendamping, source code ZIP/TAR.GZ, dan checksum rilis {html.escape(version)}.">
+<title>Rilis {html.escape(project["name"])} {html.escape(version)} — Unduh ISO, APK &amp; Source</title>
+<meta name="description" content="{html.escape(project["tagline"])} — unduh ISO prototipe UEFI, APK pendamping, source code ZIP/TAR.GZ, dan checksum rilis {html.escape(version)}.">
 <meta name="color-scheme" content="dark">
 <link rel="icon" href="../profile/rootfs/usr/share/icons/hicolor/scalable/apps/amba.svg" type="image/svg+xml">
 <style>
@@ -391,7 +393,7 @@ def render(release: dict, built: dict | None) -> str:
 cd amba-linux-{html.escape(version)}
 make check                      # tes offline
 python3 scripts/make-release.py --dry-run
-python3 scripts/make-release.py # APK + ZIP + TAR.GZ + SHA256SUMS di dist/</code></pre>
+python3 scripts/make-release.py # APK + ISO + ZIP + TAR.GZ + SHA256SUMS di dist/</code></pre>
   </section>
 
   <footer class="page">

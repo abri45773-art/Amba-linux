@@ -107,7 +107,7 @@ class ProfileTests(unittest.TestCase):
         ids = [asset["id"] for asset in release["assets"]]
         self.assertEqual(len(ids), len(set(ids)))
         for asset in release["assets"]:
-            self.assertIn(asset["kind"], {"apk", "zip", "tarball", "image", "sha256"})
+            self.assertIn(asset["kind"], {"apk", "iso", "zip", "tarball", "image", "sha256"})
             self.assertTrue(asset["description"].strip())
             self.assertTrue(asset["usage"].strip())
 

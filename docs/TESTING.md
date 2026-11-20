@@ -34,8 +34,12 @@ Cakupan:
   `resources.arsc` (stored + 4-byte aligned), blok tanda tangan v2, tanda tangan
   RSA/ECDSA lewat openssl, digest konten v2, isi manifest, dan tabel resource.
 - Mengubah satu byte di `classes.dex` harus membuat verifikasi gagal.
-- `scripts/make-release.py` menghasilkan APK + ZIP + TAR.GZ + `SHA256SUMS` yang
-  konsisten, dan arsip source hanya memuat berkas terlacak git.
+- `scripts/make-release.py` menghasilkan APK + ISO + ZIP + TAR.GZ + `SHA256SUMS`
+  yang konsisten, dan arsip source hanya memuat berkas terlacak git.
+- ISO prototipe diperiksa dengan `pycdlib`: header PE32+ stub UEFI (machine
+  AARCH64/AMD64, subsystem EFI), struktur FAT12 El Torito, Rock Ridge/Joliet,
+  katalog boot, dan berkas wajib di dalam ISO. README di ISO harus menyatakan
+  bahwa image ini prototipe tanpa kernel/rootfs.
 - `docs/releases.html` dirender dari `docs/release.json` dan `make release-check`
   gagal bila halaman sudah basi.
 

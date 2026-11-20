@@ -3,6 +3,7 @@
 """Tests for the Amba Linux bootable UEFI ISO generator."""
 import hashlib
 import importlib.util
+import io
 import json
 import os
 import struct
@@ -102,11 +103,20 @@ class IsoBuildTests(unittest.TestCase):
                 "/LOADER/ENTRIES/AMBA.CFG;1",
                 "/README.TXT;1",
                 "/AMBA/VERSION.TXT;1",
+                "/AMBA/RELEASE.JSO;1",
             ]
             for ef in expected_files:
                 entry = iso.get_record(iso_path=ef)
                 self.assertIsNotNone(entry, f"Berkas {ef} harus ada di dalam ISO")
                 self.assertGreater(entry.data_length, 0)
+
+            # The README must not claim this prototype is a complete system.
+            readme = io.BytesIO()
+            iso.get_file_from_iso_fp(readme, iso_path="/README.TXT;1")
+            readme_text = readme.getvalue().decode("utf-8")
+            self.assertIn("prototipe", readme_text)
+            self.assertIn("Tidak memuat kernel", readme_text)
+            self.assertNotIn("Desktop Distribution", readme_text)
 
             iso.close()
 

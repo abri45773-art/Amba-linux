@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Build a bootable UEFI ISO image for Amba Linux.
+"""Build the prototype UEFI ISO image for Amba Linux.
 
-Creates an ISO 9660 image with El Torito UEFI boot catalog, Rock Ridge,
-and Joliet extensions, containing:
+Creates an ISO 9660 image with an El Torito UEFI boot catalog, Rock Ridge and
+Joliet extensions. The image is a **boot-framework prototype**, not a complete
+operating system: it ships the UEFI boot chain and the distro profile, but it
+does not contain a Linux kernel, an initramfs, a root filesystem or KDE Plasma.
+A full system ISO can only be produced on a native Arch Linux ARM aarch64 host
+(see docs/BUILD.md).
+
+Contents:
   - UEFI bootloaders: /EFI/BOOT/BOOTAA64.EFI (ARM64) and /EFI/BOOT/BOOTX64.EFI (x86_64)
   - El Torito EFI boot image: /boot/efi.img (FAT12 filesystem)
   - Bootloader configurations: /loader/loader.conf, /loader/entries/amba.conf, /boot/grub/grub.cfg
   - Distro profile: /amba/profile/, /amba/VERSION, /amba/hostname, /amba/packages.aarch64.txt
-  - System configs: /amba/rootfs/
+  - Release manifest: /amba/release.json
   - Helper scripts: /amba/scripts/
   - Documentation: /docs/
   - Android companion APK: /amba/amba-android-<version>.apk (if available)
-  - Release information: /README.txt, /SHA256SUMS
+  - Prototype notice: /README.txt
 
 Usage:
     python3 scripts/build-iso.py
@@ -24,8 +30,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import io
-import json
-import os
 import struct
 import sys
 from pathlib import Path
@@ -218,23 +222,45 @@ def generate_iso(output_path: Path, version: str | None = None, force: bool = Fa
 
     # 4. User documentation & README inside ISO
     readme_text = (
-        f"====================================================\n"
-        f"Amba Linux {ver} — ARM64 UEFI Desktop Distribution\n"
-        f"====================================================\n\n"
+        f"==========================================================\n"
+        f"Amba Linux {ver} — ISO prototipe kerangka boot UEFI (ARM64)\n"
+        f"==========================================================\n\n"
         f"Versi     : {ver}\n"
         f"Arsitektur: aarch64 (ARM64)\n"
         f"Firmware  : UEFI 64-bit\n"
-        f"Desktop   : KDE Plasma\n\n"
-        f"PETUNJUK BOOT:\n"
-        f"1. Tulis image ISO ini ke media USB menggunakan 'dd' atau balenaEtcher:\n"
-        f"   sudo dd if=amba-linux-{ver}.iso of=/dev/sdX bs=4M status=progress oflag=sync\n"
-        f"2. Boot perangkat ARM64 UEFI Anda (mis. Lenovo ThinkPad X13s, VM QEMU ARM64).\n"
-        f"3. Pilih 'Amba Linux (ARM64 UEFI)' pada menu bootloader.\n\n"
-        f"DOKUMENTASI & KODE SUMBER:\n"
-        f"- Berkas dokumentasi lengkap ada di direktori /docs/\n"
-        f"- Profil instalasi & konfigurasi distro ada di /amba/\n"
-        f"- Aplikasi pendamping Android (.apk) disertakan di /amba/\n"
+        f"Desktop   : KDE Plasma (target; belum ada di ISO ini)\n\n"
+        f"PERINGATAN PENTING\n"
+        f"------------------\n"
+        f"ISO ini adalah KERANGKA BOOT (prototipe), bukan sistem operasi\n"
+        f"lengkap dan belum bisa di-boot ke desktop:\n"
+        f"- Tidak memuat kernel Linux (/boot/Image) maupun initramfs.\n"
+        f"- Tidak memuat root filesystem atau KDE Plasma.\n"
+        f"- BOOTAA64.EFI adalah stub PE32+ minimal yang langsung keluar,\n"
+        f"  sehingga firmware akan melanjutkan urutan boot berikutnya.\n"
+        f"- Entri menu systemd-boot/GRUB menunjuk /boot/Image yang belum ada.\n\n"
+        f"Image sistem lengkap harus dibangun di host Arch Linux ARM aarch64\n"
+        f"dengan scripts/build-image.sh (lihat docs/BUILD.md). ISO ini berguna\n"
+        f"untuk memeriksa struktur boot, katalog El Torito, konfigurasi loader,\n"
+        f"dan profil distro sebelum build nyata dilakukan.\n\n"
+        f"ISI ISO\n"
+        f"-------\n"
+        f"- /EFI/BOOT/BOOTAA64.EFI, /EFI/BOOT/BOOTX64.EFI  stub bootloader UEFI\n"
+        f"- /boot/efi.img         citra FAT12 untuk El Torito (platform EFI)\n"
+        f"- /loader/, /boot/grub/ konfigurasi systemd-boot dan GRUB\n"
+        f"- /amba/                VERSION, hostname, profil paket, release.json,\n"
+        f"                        dan skrip build/QEMU\n"
+        f"- /docs/                dokumentasi proyek (build, boot, rilis, uji)\n\n"
+        f"PEMERIKSAAN CEPAT\n"
+        f"-----------------\n"
+        f"1. Verifikasi checksum dari halaman rilis GitHub:\n"
+        f"   sha256sum -c SHA256SUMS        # SHA256SUMS diunduh terpisah\n"
+        f"2. Periksa struktur ISO tanpa menulis ke media:\n"
+        f"   python3 -c \"import pycdlib; i=pycdlib.PyCdlib(); i.open('amba-linux-{ver}.iso'); "
+        f"print(i.list_children(iso_path='/'))\"\n"
+        f"3. Untuk build sistem lengkap, ikuti docs/BUILD.md di host Arch Linux\n"
+        f"   ARM aarch64, lalu uji dengan scripts/run-qemu.sh.\n"
     ).encode("utf-8")
+
 
     # 5. Initialize ISO with Joliet and Rock Ridge
     iso = pycdlib.PyCdlib()
@@ -346,6 +372,17 @@ def generate_iso(output_path: Path, version: str | None = None, force: bool = Fa
             joliet_path="/amba/profile/packages.aarch64.txt",
         )
 
+    release_manifest = ROOT / "docs/release.json"
+    if release_manifest.is_file():
+        r_bytes = release_manifest.read_bytes()
+        iso.add_fp(
+            io.BytesIO(r_bytes),
+            len(r_bytes),
+            "/AMBA/RELEASE.JSO;1",
+            rr_name="release.json",
+            joliet_path="/amba/release.json",
+        )
+
     # Companion Android APK if present in dist/
     apk_candidates = list((ROOT / "dist").glob("amba-android-*.apk"))
     if apk_candidates:
@@ -431,8 +468,9 @@ def main(argv: list[str] | None = None) -> int:
         print("    - /boot/efi.img          (FAT12 El Torito UEFI bootable image)")
         print("    - /loader/loader.conf, /loader/entries/amba.conf")
         print("    - /boot/grub/grub.cfg")
-        print("    - /amba/profile/ & /amba/scripts/")
+        print("    - /amba/profile/, /amba/release.json, /amba/scripts/")
         print("    - /docs/ & /README.txt")
+        print("  Catatan     : prototipe; tanpa kernel, initramfs, rootfs, atau desktop")
         print("  Status      : Berhasil (dry-run, tidak ada berkas ditulis)")
         return 0
 
