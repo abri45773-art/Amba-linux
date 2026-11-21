@@ -8,6 +8,7 @@
 - [x] Skrip QEMU ARM64 UEFI
 - [x] Tes offline dan dokumentasi
 - [x] Tuning runtime: zram, BBR, I/O scheduler, batas journald, `fstrim`
+- [x] Hardening security default: sysctl keamanan, image privat, file hash wajib privat
 - [x] Perbaikan bug drop-in SDDM, `/etc/hosts`, dan sinkronisasi systemd-boot
 - [x] CHANGELOG proyek
 - [ ] Build nyata di host Arch Linux ARM
@@ -31,6 +32,7 @@
 
 ## Nanti bila diperlukan
 
+- [ ] Firewall inbound default-drop (nftables) untuk jaringan tidak tepercaya
 - [ ] Paket kernel `linux-amba` terpisah
 - [ ] Secure Boot dengan manajemen kunci yang jelas
 - [ ] Live image dengan overlay sementara

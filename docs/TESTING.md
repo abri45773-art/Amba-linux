@@ -30,6 +30,9 @@ Cakupan:
   PNG dengan dimensi IHDR yang diminta.
 - QEMU default memakai snapshot, mesin ARM64, dan `virtio-rng-pci`.
 - Builder menargetkan file image loopback, bukan disk fisik.
+- Drop-in khusus hardening sysctl (`99-amba-security.conf`) eksis dengan nilai keamanan jaringan/kernel: redirect/source-route ditolak, `rp_filter=2`, `log_martians`, `ip_forward=0`, `dmesg_restrict`, `kptr_restrict`, `suid_dumpable=0`, `mmap_min_addr`, perlindungan hardlink/symlink/fifo.
+- Builder memaksa `umask 077` dan `chmod 600` untuk image + checksum.
+- Builder memakai `check_password_hash_file_permissions` dan menolak file hash yang dapat dibaca group/world.
 - APK dibangun lalu diverifikasi ulang secara independen: struktur ZIP, aturan
   `resources.arsc` (stored + 4-byte aligned), blok tanda tangan v2, tanda tangan
   RSA/ECDSA lewat openssl, digest konten v2, isi manifest, dan tabel resource.
@@ -42,6 +45,8 @@ Cakupan:
   bahwa image ini prototipe tanpa kernel/rootfs.
 - `docs/releases.html` dirender dari `docs/release.json` dan `make release-check`
   gagal bila halaman sudah basi.
+
+Tes ini **tidak** melakukan instalasi paket, mount, chroot, atau boot.
 
 Tes ini **tidak** melakukan instalasi paket, mount, chroot, atau boot.
 

@@ -223,6 +223,63 @@ class ProfileTests(unittest.TestCase):
         self.assertNotIn("bdi/read_ahead_kb", rules)
 
 
+class SecurityHardeningTests(unittest.TestCase):
+    """Hardening settings and builder permissions introduced for Amba Linux."""
+
+    def test_security_sysctl_dropin_hardens_desktop(self):
+        path = PROFILE / "etc/sysctl.d/99-amba-security.conf"
+        self.assertTrue(path.is_file(), "sysctl drop-in keamanan hilang: " + str(path))
+        values = sysctl_values(path)
+        # Network inbound hardening.
+        for key in (
+            "net.ipv4.conf.all.accept_redirects",
+            "net.ipv4.conf.default.accept_redirects",
+            "net.ipv4.conf.all.accept_source_route",
+            "net.ipv4.conf.default.accept_source_route",
+            "net.ipv4.conf.all.send_redirects",
+            "net.ipv4.conf.default.send_redirects",
+        ):
+            self.assertEqual("0", values[key], key)
+        self.assertEqual("0", values["net.ipv4.ip_forward"])
+        # Loose rp_filter (2): tolerates VPNs/multi-interface desktops while
+        # still dropping packets that cannot legally reach this host.
+        self.assertEqual("2", values["net.ipv4.conf.all.rp_filter"])
+        self.assertEqual("2", values["net.ipv4.conf.default.rp_filter"])
+        self.assertEqual("1", values["net.ipv4.conf.all.log_martians"])
+        self.assertEqual("1", values["net.ipv4.conf.default.log_martians"])
+        # IPv6 redirects are rejected, but SLAAC/DHCPv6 keep working.
+        self.assertEqual("0", values["net.ipv6.conf.all.accept_redirects"])
+        self.assertEqual("0", values["net.ipv6.conf.default.accept_redirects"])
+        # Kernel/memory hardening.
+        self.assertEqual("1", values["kernel.dmesg_restrict"])
+        self.assertEqual("1", values["kernel.kptr_restrict"])
+        self.assertEqual("0", values["fs.suid_dumpable"])
+        self.assertEqual("1", values["fs.protected_hardlinks"])
+        self.assertEqual("1", values["fs.protected_symlinks"])
+        self.assertEqual("1", values["fs.protected_fifos"])
+        self.assertEqual("65536", values["vm.mmap_min_addr"])
+
+    def test_builder_forces_private_output_files(self):
+        # The image embeds the build-time password hash; outputs must not be
+        # left world-readable by the builder's umask.
+        text = (ROOT / "scripts/build-image.sh").read_text()
+        self.assertIn("umask 077", text)
+        self.assertIn("chmod 600", text)
+
+    def test_builder_uses_hash_file_permission_check(self):
+        text = (ROOT / "scripts/build-image.sh").read_text()
+        self.assertIn("check_password_hash_file_permissions", text)
+
+    def test_hash_file_permissions_helper_blocks_group_world_readers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            f = Path(tmp, "hash")
+            f.write_text("$6$fake:data\n")
+            for mode, should_pass in ((0o600, True), (0o400, True), (0o644, False), (0o777, False), (0o646, False)):
+                f.chmod(mode)
+                result = bash(f'source scripts/lib/common.sh; check_password_hash_file_permissions "{f}"')
+                self.assertEqual(0 if should_pass else 1, result.returncode, f"mode={oct(mode)}")
+
+
 class HelperTests(unittest.TestCase):
     def test_username_validation(self):
         for name in ["amba", "budi_01", "a-b"]:

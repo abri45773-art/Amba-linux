@@ -53,6 +53,7 @@ dicabut tanpa menyentuh paket Arch Linux ARM.
 | `etc/systemd/zram-generator.conf` | Swap terkompresi di RAM (zstd); board ARM sering ber-RAM kecil dengan eMMC/SD lambat |
 | `etc/sysctl.d/99-amba-memory.conf` | `swappiness=180` + `page-cluster=0` cocok untuk zram; `max_map_count` untuk browser/Plasma |
 | `etc/sysctl.d/99-amba-network.conf` | `fq` + BBR menurunkan latensi tanpa tuning manual |
+| `etc/sysctl.d/99-amba-security.conf` | Hardening jaringan/kernel (redirect/source-route ditolak, `rp_filter`, `ip_forward=0`, `dmesg_restrict`, `kptr_restrict`) |
 | `etc/sysctl.d/99-amba-desktop.conf` | Batas inotify default terlalu kecil untuk Plasma indexing dan IDE; `sched_autogroup`, `fs.file-max`, NMI watchdog off untuk respons desktop |
 | `etc/sysctl.d/99-amba-memory.conf` | Interval writeback diperpanjang (`dirty_expire/writeback_centisecs`) mengurangi wear eMMC/SD |
 | `etc/xdg/baloofilerc` | Indexing Baloo nonaktif default (hemat CPU/flash saat login); bisa diaktifkan lagi per pengguna |
