@@ -113,3 +113,18 @@ Semua perubahan penting proyek ini dicatat di sini. Format mengikuti
 20. **systemd fail-fast**: `DefaultTimeoutStartSec=20s`, `DefaultTimeoutStopSec
     =10s`, `DefaultDeviceTimeoutSec=10s` agar satu unit macet tidak menahan
     boot selama 90 detik.
+
+### Keamanan
+
+1. **Drop-in hardening sysctl baru** (`etc/sysctl.d/99-amba-security.conf`):
+   redirect dan source-route dinonaktifkan, `rp_filter=2` (loose),
+   `log_martians=1`, `ip_forward=0`, `send_redirects=0`, IPv6
+   `accept_redirects=0`, `kernel.dmesg_restrict=1`, `kernel.kptr_restrict=1`,
+   `fs.suid_dumpable=0`, perlindungan hardlink/symlink/fifo, dan
+   `vm.mmap_min_addr=65536`.
+2. **Image dan checksum output privat.** Builder memaksa `umask 077` dan
+   menutup image + `.sha256` dengan `chmod 600` sehingga hash password
+   yang terkandung di dalam image tidak bocor ke pengguna lain.
+3. **File hash password harus privat.** Builder menolak file hash yang dapat
+   dibaca group/world (helper `check_password_hash_file_permissions`), bukan
+   hanya hash format salah.

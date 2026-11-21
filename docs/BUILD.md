@@ -37,6 +37,14 @@ openssl passwd -6 > ~/amba-password.hash
 
 Perintah tersebut meminta password secara interaktif dan menulis hash SHA-crypt. Builder juga menerima yescrypt (`$y$`). Simpan file hash dengan izin ketat, misalnya `chmod 600 ~/amba-password.hash`.
 
+Builder **menolak file hash yang dapat dibaca group/world** (izin apa pun selain `600`/`400`/`700`):
+
+```bash
+chmod 600 ~/amba-password.hash   # wajib sebelum build
+```
+
+Jika file hash sebelumnya terbaca oleh grup/user lain, builder berhenti dengan pesan yang menyebut perbaikan izin tersebut.
+
 ## 3. Jalankan build
 
 ```bash
@@ -93,6 +101,9 @@ findmnt -R work/
 out/amba-linux-0.1.0-aarch64.img
 out/amba-linux-0.1.0-aarch64.img.sha256
 ```
+
+Image dan checksum dibuat dengan `chmod 600` (hanya pemilik yang dapat membaca)
+serta `umask 077` pada builder, karena image berisi hash password user.
 
 Image adalah sistem persisten bergaya installed-system. Ini **bukan** live ISO dengan squashfs/overlay dan bukan installer grafis. Untuk memasang ke media nyata, lihat [BOOT-UEFI.md](BOOT-UEFI.md).
 

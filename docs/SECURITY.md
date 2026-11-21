@@ -8,6 +8,14 @@
 - Tidak ada autologin SDDM.
 - `wheel` memerlukan password untuk sudo.
 - OpenSSH server tidak dipasang oleh profil awal.
+- sysctl hardening drop-in diaktifkan: redirect/source-route ditolak,
+  `rp_filter=2`, `log_martians=1`, `ip_forward=0`, IPv6
+  `accept_redirects=0`, `kernel.dmesg_restrict=1`,
+  `kernel.kptr_restrict=1`, `fs.suid_dumpable=0`, perlindungan
+  hardlink/symlink/fifo diaktifkan, `vm.mmap_min_addr=65536`.
+- Image output dan checksum privat (`chmod 600`, `umask 077`): image berisi
+  hash password dan tidak boleh bocor ke pengguna lain di mesin build.
+- Builder menolak file hash password yang dapat dibaca group/world.
 - Secure Boot belum diimplementasikan.
 - Builder hanya memanipulasi file image melalui loop device.
 - Output yang sudah ada tidak ditimpa.
@@ -22,6 +30,15 @@
 - SHA-256 rootfs mendeteksi perubahan file, tetapi bukan tanda tangan kriptografis. Dapatkan hash dari sumber tepercaya.
 - Paket setelah bootstrap diverifikasi oleh keyring/pacman Arch Linux ARM.
 - Jangan menonaktifkan verifikasi tanda tangan pacman.
+- Setelan sysctl hardening bukan pengganti firewall. Tidak ada firewall
+  aktif secara default (OpenSSH tidak dipasang, tetapi jaringan lokal tetap
+  terbuka normal). Untuk jaringan tidak tepercaya, tambahkan aturan nftables
+  default-inbound-deny sebelum deployment.
+- `rp_filter=2` (loose) dipilih agar VPN/multi-interface desktop tetap
+  berfungsi; gunakan `rp_filter=1` (strict) hanya bila perangkat pasti satu
+  interface saja.
+- Baca `dmesg` membutuhkan root setelah `kernel.dmesg_restrict=1`; diagnostik
+  kernel lewat `journalctl -k` tetap tersedia bagi yang memiliki hak.
 - Jangan menjalankan build dari rootfs atau overlay yang tidak dipercaya; proses chroot/package installation berjalan sebagai root.
 - `nowatchdog` pada kernel cmdline mematikan lockup/NMI watchdog; ini
   menghemat tick CPU tetapi menghilangkan deteksi soft-lockup otomatis.

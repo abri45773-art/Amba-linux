@@ -34,6 +34,18 @@ valid_password_hash() {
   return 1
 }
 
+# The password-hash file contains the account password; it must not be readable
+# or writable by group or others. The builder runs as root, so the mode bits
+# (and an explicit permission refusal) are the only guard.
+check_password_hash_file_permissions() {
+  local file="$1"
+  [[ -f "$file" ]] || return 2
+  local mode
+  mode=$(stat -Lc %a -- "$file" 2>/dev/null) || return 3
+  [[ "$mode" =~ ^[0-7]{3,4}$ ]] || return 3
+  (( (8#$mode & 077) == 0 ))
+}
+
 require_tools() {
   local tool missing=()
   for tool in "$@"; do

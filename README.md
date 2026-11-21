@@ -94,7 +94,7 @@ Untuk host x86_64, QEMU memakai emulasi TCG sehingga lambat. Untuk pengujian yan
 ## Pemeriksaan tanpa build
 
 ```bash
-make check       # syntax Bash + unit test offline
+make check       # syntax Bash + unit test offline (83 tes)
 make lint        # memerlukan shellcheck
 make dry-run     # menampilkan rencana build tanpa perubahan
 make wallpaper   # render ulang wallpaper 4K (bisa WIDTH=/HEIGHT=/OUTPUT=)
@@ -123,6 +123,9 @@ dan [docs/CHANGELOG.md](docs/CHANGELOG.md).
 - Akun `root` dikunci; user bawaan `alarm` dikunci dan kedaluwarsa.
 - SDDM tidak memakai autologin.
 - Anggota `wheel` memakai `sudo` dengan password.
+- sysctl hardening: `dmesg_restrict`, `kptr_restrict`, penerimaan redirect/source-route dinonaktifkan, `rp_filter=2` dan `log_martians` pada jalur jaringan, `ip_forward=0`, `suid_dumpable=0`, `mmap_min_addr` di-set ke 64 KiB, dan perlindungan hardlink/symlink/fifo.
+- Image output dan checksum hanya dapat dibaca pemilik (`chmod 600`); builder juga memaksa `umask 077`.
+- Builder menolak file hash password yang dapat dibaca group/world (izin harus privat, misalnya `0600`).
 - Builder hanya membuat **file image loopback**, tidak mempartisi disk fisik.
 - QEMU secara default memakai `-snapshot`; perubahan disk dibuang kecuali `--persistent`.
 

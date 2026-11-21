@@ -89,6 +89,10 @@ fi
 [[ "$KEYMAP" =~ ^[a-zA-Z0-9_-]+$ ]] || die "Keymap tidak valid."
 [[ "$TIMEZONE" =~ ^[A-Za-z0-9_+/-]+$ && "$TIMEZONE" != *..* && "$TIMEZONE" != /* ]] || die "Timezone tidak valid."
 
+# Everything the build creates (sparse image, temp mount dir, metadata files)
+# must stay readable by the builder user only; the image embeds the password hash.
+umask 077
+
 if (( DRY_RUN )); then
   cat <<EOF
 RENCANA BUILD (tidak ada perubahan dilakukan)
@@ -100,7 +104,7 @@ RENCANA BUILD (tidak ada perubahan dilakukan)
   User         : $USERNAME (password hash wajib saat build nyata)
   Locale       : $LOCALE, $TIMEZONE, keymap=$KEYMAP
   Boot         : systemd-boot, EFI/BOOT/BOOTAA64.EFI, tanpa Secure Boot
-  Keamanan     : root dan user bawaan alarm dikunci; sudo memakai password
+  Keamanan     : root/alarm dikunci; sudo memakai password; sysctl hardening; output privat (chmod 600)
   Optimasi     : noatime, zram, BBR/fq, I/O scheduler, journald dibatasi, fstrim
 EOF
   exit 0
@@ -115,7 +119,8 @@ require_tools arch-chroot bsdtar sfdisk losetup mkfs.fat mkfs.ext4 blkid udevadm
 if [[ -z "$ROOTFS_SHA256" ]] || ! valid_sha256 "$ROOTFS_SHA256"; then
   die "--rootfs-sha256 wajib berupa 64 digit heksadesimal."
 fi
-[[ -n "$PASSWORD_HASH_FILE" && -f "$PASSWORD_HASH_FILE" ]] || die "File password hash tidak ditemukan."
+[[ -n "$PASSWORD_HASH_FILE" ]] || die "File password hash tidak ditemukan."
+check_password_hash_file_permissions "$PASSWORD_HASH_FILE" || die "File password hash harus privat (tidak ada izin group/other). Perbaiki: chmod 600 \"$PASSWORD_HASH_FILE\""
 PASSWORD_HASH=$(head -n 1 -- "$PASSWORD_HASH_FILE")
 PASSWORD_HASH=${PASSWORD_HASH%$'\r'}
 valid_password_hash "$PASSWORD_HASH" || die "Hash harus SHA-crypt (\$6\$) atau yescrypt (\$y\$), bukan password plaintext."
@@ -324,6 +329,9 @@ LOOP_DEV=""
 
 mv -- "$IMAGE_WORK" "$OUTPUT"
 ( cd -- "$(dirname -- "$OUTPUT")" && sha256sum -- "$(basename -- "$OUTPUT")" > "$(basename -- "$OUTPUT").sha256" )
+# Keep the image and its checksum readable by the builder user only: the
+# image embeds the hash of the build-time password.
+chmod 600 -- "$OUTPUT" "${OUTPUT}.sha256"
 log "Selesai membuat image: $OUTPUT"
 log "Uji boot dengan scripts/run-qemu.sh sebelum menulis ke media/perangkat nyata."
 log "Image belum di-boot oleh builder ini; kompatibilitas hardware harus diuji terpisah."
